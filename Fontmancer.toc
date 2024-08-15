@@ -1,0 +1,14 @@
+## Interface: 110002
+## Version: 1.0
+## Title: Fontmancer
+## Notes: Choose any of your SharedMedia fonts to apply to all of the default Blizzard UI! Inspired by gmFonts
+## Author: Orazur
+## SavedVariables: FontmancerDB
+## IconTexture: Interface\AddOns\Fontmancer\Logo.png
+
+libs\AceAddon-3.0\AceAddon-3.0.xml
+libs\AceConfig-3.0\AceConfig-3.0.xml
+libs\AceDB-3.0\AceDB-3.0.xml
+libs\LibSharedMedia-3.0\lib.xml
+
+Core.lua
