@@ -7,7 +7,42 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 local Fontmancer = AceAddon:NewAddon("Fontmancer")
 
+local metadata = {
+  TITLE = "Title",
+  DESCRIPTION = "Notes",
+}
+
+  
+local optionOrder = 0
+local function optionOrderPlusPlus()
+    optionOrder = optionOrder + 1
+    return optionOrder
+end
+
+local function createSpacing(width)
+    return {
+        type = "description",
+        name = " ",
+        width = width,
+        order = optionOrderPlusPlus()
+    }
+end
+
+local function createReloadWarning(width)
+    return {
+        type = "description",
+        name = "|cffff9900You will need to reload your UI for that option to take effect!|r",
+        width = width,
+        order = optionOrderPlusPlus()
+    }
+end
+
 function Fontmancer:OnInitialize()
+    -- Fetch metadata
+    for keyName, keyValue in pairs(metadata) do
+        metadata[keyName] = C_AddOns.GetAddOnMetadata("Fontmancer", keyValue)
+    end
+
     -- Initialise the database
     local databaseDefaults = {
         global = {
@@ -19,14 +54,51 @@ function Fontmancer:OnInitialize()
 
     -- Create the options
     local options = {
-        name = "Font Changer",
+        name = metadata.TITLE,
         handler = Fontmancer,
         type = "group",
         args = {
-            fontSelect = {
+            -- ABOUT
+            aboutHeader = {
+              type = "header",
+              name = "About",
+              order = optionOrderPlusPlus()
+            },
+            spacing1 = createSpacing("full"),
+            logoImage = {
+                type = "description",
+                name = " ",
+                width = 0.5,
+                image = "Interface\\AddOns\\Fontmancer\\Logo.png",
+                imageWidth = 64,
+                imageHeight = 64,
+                imageCoords = {
+                    0,
+                    1,
+                    0,
+                    1
+                },
+                order = optionOrderPlusPlus()
+            },
+            spacing2 = createSpacing(0.1),
+            description = {
+                type = "description",
+                name = metadata.DESCRIPTION,
+                fontSize = "medium",
+                width = 3.1,
+                order = optionOrderPlusPlus()
+            },
+            -- CONFIG
+            header = {
+              type = "header",
+              name = "Config",
+              order = optionOrderPlusPlus()
+            },
+            spacing3 = createSpacing("full"),
+            fontSelector = {
                 type = "select",
                 name = "Font",
-                desc = "Choose the SharedMedia font to apply to all Blizzard UI elements",
+                desc = "Choose the font to apply to all UI elements (add new fonts with SharedMedia)",
                 dialogControl = "LSM30_Font",
                 values = LSM:HashTable(LSM.MediaType.FONT),
                 get = function(_)
@@ -36,8 +108,26 @@ function Fontmancer:OnInitialize()
                     self.db.global.selectedFont = value
                     self:ApplyFont()
                 end,
-                order = 1,
+                order = optionOrderPlusPlus(),
             },
+            spacing4 = createSpacing("full"),
+            deltaSelector = {
+                type = "range",
+                name = "Delta",
+                desc = "Optional delta value used to adjust your font size",
+                min = -10,
+                max = 10,
+                step = 0.5,
+                get = function(_)
+                    return self.db.global.delta
+                end,
+                set = function(_, value)
+                    self.db.global.delta = value
+                end,
+                order = optionOrderPlusPlus(),
+            },
+            spacing5 = createSpacing(0.1),
+            deltaWarning = createReloadWarning(2)
         },
     }
     AceConfig:RegisterOptionsTable(self.name, options)
@@ -49,12 +139,16 @@ function Fontmancer:OnEnable()
 end
 
 function Fontmancer:ApplyFont()
-    for frameName in pairs(_G) do
-        local frame = _G[frameName]
-        if frame and frame.GetFont then
-            print(frameName .. frame.GetFont())
-        end
-    end
+    -- TODO
+    -- for frameName in pairs(_G) do
+    --     local frame = _G[frameName]
+    --     if type(frame) == "table" and frame and frame.IsForbidden and not frame:IsForbidden() and frame.GetFont then
+    --         if frame:GetFont() then
+    --             print(frameName .. frame:GetFont())
+    --         end
+    --     end
+    -- end
+
     local selectedFont = self.db.global.selectedFont
     if not selectedFont then
         return
