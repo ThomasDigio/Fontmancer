@@ -4,11 +4,11 @@
 ## Notes: Magically apply the same font to your whole UI with a single click!
 ## Author: Orazur
 ## SavedVariables: FontmancerDB
-## IconTexture: Interface\AddOns\Fontmancer\Logo.png
+## IconTexture: Interface\AddOns\Fontmancer\Assets\Logo.png
 
-libs\AceAddon-3.0\AceAddon-3.0.xml
-libs\AceConfig-3.0\AceConfig-3.0.xml
-libs\AceDB-3.0\AceDB-3.0.xml
-libs\LibSharedMedia-3.0\lib.xml
+Libraries\AceAddon-3.0\AceAddon-3.0.xml
+Libraries\AceConfig-3.0\AceConfig-3.0.xml
+Libraries\AceDB-3.0\AceDB-3.0.xml
+Libraries\LibSharedMedia-3.0\lib.xml
 
 Core.lua
