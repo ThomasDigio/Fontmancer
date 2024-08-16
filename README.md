@@ -1,4 +1,4 @@
-# <img src="./Assets/Logo.png" alt="Logo" width="35" align="left"/>ontmancer
+# <img src="./Assets/Logo.png" alt="Logo" width="50"/>ontmancer
 
 ![](https://cf.way2muchnoise.eu/short_fontmancer.svg)
 
