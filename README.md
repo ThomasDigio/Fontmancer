@@ -1,5 +1,7 @@
-# Fontmancer
+# <img src="./Assets/Logo.png" alt="Logo" width="35" align="left"/>ontmancer
 
-A WoW addon to magically apply the same font to your whole UI with a single click!
+![](https://cf.way2muchnoise.eu/short_fontmancer.svg)
 
-Download it on [CuseForge](https://www.curseforge.com/wow/addons/fontmancer)
+Learn more on [CuseForge](https://www.curseforge.com/wow/addons/fontmancer)!
+
+![](./Assets/Before_After.jpg)
