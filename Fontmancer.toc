@@ -10,9 +10,10 @@ Libraries\LibStub\LibStub.lua
 Libraries\CallbackHandler\CallbackHandler-1.0.xml
 Libraries\Ace3\AceAddon\AceAddon-3.0.xml
 Libraries\Ace3\AceConfigDialog\AceConfigDialog-3.0.xml
+Libraries\Ace3\AceConfigRegistry\AceConfigRegistry-3.0.xml
 Libraries\Ace3\AceDB\AceDB-3.0.xml
 Libraries\Ace3/AceGUI\AceGUI-3.0.xml
 Libraries\LibSharedMedia\lib.xml
-Libraries\Ace3/AceGUI-SharedMediaWidgets\AceGUI-3.0-SharedMediaWidgets.xml
+Libraries\Ace3/AceGUI-SharedMediaWidgets\widget.xml
 
 Core.lua
