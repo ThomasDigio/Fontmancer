@@ -6,9 +6,11 @@
 ## SavedVariables: FontmancerDB
 ## IconTexture: Interface\AddOns\Fontmancer\Assets\Logo.png
 
-Libraries\AceAddon-3.0\AceAddon-3.0.xml
-Libraries\AceConfig-3.0\AceConfig-3.0.xml
-Libraries\AceDB-3.0\AceDB-3.0.xml
-Libraries\LibSharedMedia-3.0\lib.xml
+Libraries\LibStub\LibStub.lua
+Libraries\Ace3\AceAddon\AceAddon-3.0.xml
+Libraries\Ace3\AceConfig\AceConfig-3.0.xml
+Libraries\Ace3\AceDB\AceDB-3.0.xml
+Libraries\CallbackHandler\CallbackHandler-1.0.xml
+Libraries\LibSharedMedia\lib.xml
 
 Core.lua
