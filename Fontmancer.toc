@@ -1,5 +1,5 @@
 ## Interface: 110002
-## Version: 1.0
+## Version: 1.2
 ## Title: |cfffff78cF|r|cfff9f290o|r|cfff3ed95n|r|cffede89bt|r|cffe8e3a1m|r|cffe2dea7a|r|cffdcd9adn|r|cffd6d4b3c|r|cffd0cfb9e|r|cffcac9ber|r
 ## Notes: Magically apply the same font to your whole UI with a single click!
 ## Author: Orazur
