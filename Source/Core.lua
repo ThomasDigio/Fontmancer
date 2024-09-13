@@ -32,7 +32,7 @@ function Fontmancer:OnInitialize()
     }
     self.db = AceDB:New("FontmancerDB", databaseDefaults)
     Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
-    Fontmancer.previousSelectedFont = self.db.global.selectedFont
+    Fontmancer.initiallySelectedFont = self.db.global.selectedFont
 
     -- Create the options
     local options = {
@@ -283,8 +283,8 @@ function Fontmancer:BuildFlags(fontName)
 end
 
 function Fontmancer:ShouldReloadForFonts()
-    -- Show the warning when we toggle "Exclude Nameplates" on
-    return self.db.global.selectedFont ~= self.previousSelectedFont
+    -- Show the warning when we change the font
+    return self.db.global.selectedFont ~= self.initiallySelectedFont
 end
 
 function Fontmancer:ShouldReloadForNameplates()
