@@ -32,6 +32,7 @@ function Fontmancer:OnInitialize()
     }
     self.db = AceDB:New("FontmancerDB", databaseDefaults)
     Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
+    Fontmancer.initiallySelectedFont = self.db.global.selectedFont
 
     -- Create the options
     local options = {
@@ -84,6 +85,28 @@ function Fontmancer:OnInitialize()
                     self:ApplyFont()
                 end,
             },
+            fontReloadImage = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "description",
+                name = " ",
+                image = "Interface\\AddOns\\Fontmancer\\Assets\\Warning.png",
+                imageWidth = 14,
+                imageHeight = 20,
+                width = 0.2,
+                hidden = function()
+                    return not self:ShouldReloadForFonts()
+                end,
+            },
+            fontReloadWarning = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "description",
+                name =
+                "|cffff9900You will need to fully logout / exit the game for that option to take effect on floating combat text!|r",
+                hidden = function()
+                    return not self:ShouldReloadForFonts()
+                end,
+                width = 2.3,
+            },
             fontSpacing = self:CreateSpacing(),
             excludeNameplates = {
                 order = self:IncrementAndFetchOptionOrder(),
@@ -101,28 +124,28 @@ function Fontmancer:OnInitialize()
                 end,
                 width = 0.9,
             },
-            excludeNameplatesReload = {
+            excludeNameplatesReloadButton = {
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "execute",
                 name = "",
                 desc = "Just like a " .. self:ColourText("/reload") .. " or " .. self:ColourText("/reloadui"),
                 image = "Interface\\AddOns\\Fontmancer\\Assets\\Reload.png",
-                imageWidth = 16,
-                imageHeight = 16,
+                imageWidth = 14,
+                imageHeight = 14,
                 func = function()
                     C_UI.Reload()
                 end,
-                disabled = function()
-                    return not self:ShouldReload()
+                hidden = function()
+                    return not self:ShouldReloadForNameplates()
                 end,
                 width = 0.2,
             },
-            excludeNameplatesWarning = {
+            excludeNameplatesReloadWarning = {
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "description",
                 name = "|cffff9900You will need to reload your UI for that option to take effect!|r",
                 hidden = function()
-                    return not self:ShouldReload()
+                    return not self:ShouldReloadForNameplates()
                 end,
                 width = 2,
             },
@@ -195,6 +218,18 @@ function Fontmancer:OnInitialize()
     }
     AceConfigRegistry:RegisterOptionsTable(self.name, options)
     AceConfigDialog:AddToBlizOptions(self.name)
+
+    -- Change some of the fonts on addon load event otherwise it will not actually apply
+    self.frame:RegisterEvent("ADDON_LOADED")
+    self.frame:SetScript("OnEvent", function()
+        local selectedFont = self.db.global.selectedFont
+        if selectedFont then
+            local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
+            DAMAGE_TEXT_FONT = fetchedFont
+            UNIT_NAME_FONT = fetchedFont
+            -- STANDARD_TEXT_FONT? NAMEPLATE_FONT?
+        end
+    end)
 end
 
 function Fontmancer:OnEnable()
@@ -247,7 +282,12 @@ function Fontmancer:BuildFlags(fontName)
     return table.concat(newFlagsSplit, ", ")
 end
 
-function Fontmancer:ShouldReload()
+function Fontmancer:ShouldReloadForFonts()
+    -- Show the warning when we change the font
+    return self.db.global.selectedFont ~= self.initiallySelectedFont
+end
+
+function Fontmancer:ShouldReloadForNameplates()
     -- Show the warning when we toggle "Exclude Nameplates" on
     return self.db.global.excludeNameplates and not self.previousExcludeNameplates
 end
