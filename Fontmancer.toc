@@ -17,3 +17,4 @@ Libraries/LibSharedMedia/lib.xml
 Libraries/Ace3/AceGUI-SharedMediaWidgets/widget.xml
 
 Source/Core.lua
+Source/Options.lua

@@ -1,223 +1,42 @@
+local addonName = ...
 local AceAddon = LibStub("AceAddon-3.0")
-local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceDB = LibStub("AceDB-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local Fontmancer = AceAddon:NewAddon("Fontmancer")
+---@class Fontmancer: AceAddon
+local Fontmancer = AceAddon:NewAddon(addonName)
+
 Fontmancer.metadata = {
     TITLE = "Title",
     LOGO_PATH = "IconTexture",
     DESCRIPTION = "Notes"
 }
-Fontmancer.optionOrder = 0
-Fontmancer.colour = "fff78c"
 Fontmancer.originalFonts = {}
 Fontmancer.frame = CreateFrame("FRAME")
 
 function Fontmancer:OnInitialize()
     -- Fetch metadata
     for keyName, keyValue in pairs(self.metadata) do
-        self.metadata[keyName] = C_AddOns.GetAddOnMetadata("Fontmancer", keyValue)
+        self.metadata[keyName] = C_AddOns.GetAddOnMetadata(addonName, keyValue)
     end
 
-    -- Initialise the database
-    local databaseDefaults = {
+    -- Setup the options database + panel
+    self.databaseDefaults = {
         global = {
-            offsets = { height = 0 },
+            selectedFont = nil,
             excludeNameplates = false,
+            offsets = { height = 0, spacing = 0 },
+            enableColour = false,
+            enableAlpha = false,
+            colour = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
-            selectedFont = nil
+            forceIndent = false,
         }
     }
-    self.db = AceDB:New("FontmancerDB", databaseDefaults)
+    self.db = AceDB:New(addonName .. "DB", self.databaseDefaults)
     Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
     Fontmancer.initiallySelectedFont = self.db.global.selectedFont
-
-    -- Create the options
-    local options = {
-        name = self.metadata.TITLE,
-        handler = Fontmancer,
-        type = "group",
-        args = {
-            -- ABOUT
-            aboutHeader = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "header",
-                name = "About",
-            },
-            aboutHeaderSpacing = self:CreateSpacing(),
-            logoImage = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "description",
-                name = " ",
-                width = 0.6,
-                image = self.metadata.LOGO_PATH,
-                imageWidth = 64,
-                imageHeight = 64,
-            },
-            description = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "description",
-                name = self.metadata.DESCRIPTION,
-                fontSize = "medium",
-                width = 3.1,
-            },
-            -- CONFIG
-            configHeader = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "header",
-                name = "Config",
-            },
-            configHeaderSpacing = self:CreateSpacing(),
-            fontSelector = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "select",
-                name = "Font",
-                desc = "Choose the font to apply to all UI elements (add new fonts with SharedMedia)",
-                dialogControl = "LSM30_Font",
-                values = LSM:HashTable(LSM.MediaType.FONT),
-                get = function(_)
-                    return self.db.global.selectedFont
-                end,
-                set = function(_, value)
-                    self.db.global.selectedFont = value
-                    self:ApplyFont()
-                end,
-            },
-            fontReloadImage = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "description",
-                name = " ",
-                image = "Interface\\AddOns\\Fontmancer\\Assets\\Warning.png",
-                imageWidth = 14,
-                imageHeight = 20,
-                width = 0.2,
-                hidden = function()
-                    return not self:ShouldReloadForFonts()
-                end,
-            },
-            fontReloadWarning = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "description",
-                name =
-                "|cffff9900You will need to fully logout / exit the game for that option to take effect on floating combat text!|r",
-                hidden = function()
-                    return not self:ShouldReloadForFonts()
-                end,
-                width = 2.3,
-            },
-            fontSpacing = self:CreateSpacing(),
-            excludeNameplates = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "toggle",
-                name = "Exclude Nameplates",
-                desc =
-                "Some people may find that nameplate text grows abnormally large using a different font and therefore want to disable it",
-                get = function(_)
-                    return self.db.global.excludeNameplates
-                end,
-                set = function(_, value)
-                    self.previousExcludeNameplates = self.db.global.excludeNameplates
-                    self.db.global.excludeNameplates = value
-                    self:ApplyFont()
-                end,
-                width = 0.9,
-            },
-            excludeNameplatesReloadButton = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "execute",
-                name = "",
-                desc = "Just like a " .. self:ColourText("/reload") .. " or " .. self:ColourText("/reloadui"),
-                image = "Interface\\AddOns\\Fontmancer\\Assets\\Reload.png",
-                imageWidth = 14,
-                imageHeight = 14,
-                func = function()
-                    C_UI.Reload()
-                end,
-                hidden = function()
-                    return not self:ShouldReloadForNameplates()
-                end,
-                width = 0.2,
-            },
-            excludeNameplatesReloadWarning = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "description",
-                name = "|cffff9900You will need to reload your UI for that option to take effect!|r",
-                hidden = function()
-                    return not self:ShouldReloadForNameplates()
-                end,
-                width = 2,
-            },
-            excludeNameplatesSpacing = self:CreateSpacing(),
-            offsetGroup = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "group",
-                name = "Offsets",
-                inline = true,
-                args = {
-                    heightSelector = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "range",
-                        name = "Height",
-                        min = -10,
-                        max = 10,
-                        step = 0.5,
-                        get = function(_)
-                            return self.db.global.offsets.height
-                        end,
-                        set = function(_, value)
-                            self.db.global.offsets.height = value
-                            self:ApplyFont()
-                        end,
-                    },
-                },
-            },
-            offsetGroupSpacing = self:CreateSpacing(),
-            flagGroup = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "group",
-                name = "Flags",
-                inline = true,
-                args = {
-                    flagStateDescription = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "description",
-                        name =
-                            "• Unchecked means it will leave it as it is\n" ..
-                            "• Checked means it will apply it everywhere\n" ..
-                            "• Greyed out means it will remove it everywhere\n",
-                        width = 1.8,
-                    },
-                    flagNameDescription = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "description",
-                        name =
-                            "• " .. self:ColourText("Monochrome") .. ": Font is rendered without antialiasing\n" ..
-                            "• " .. self:ColourText("Outline") .. ": Font is displayed with a black outline\n" ..
-                            "• " .. self:ColourText("Thick") .. ": Font is displayed with a thick black outline\n",
-                        width = 1.8,
-                    },
-                    flagsSelector = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "multiselect",
-                        name = "",
-                        values = { MONOCHROME = "Monochrome", OUTLINE = "Outline", THICKOUTLINE = "Thick" },
-                        tristate = true,
-                        get = function(_, name)
-                            return self.db.global.flags[name]
-                        end,
-                        set = function(_, name, value)
-                            self.db.global.flags[name] = value
-                            self:ApplyFont()
-                        end,
-                    },
-                },
-            },
-        },
-    }
-    AceConfigRegistry:RegisterOptionsTable(self.name, options)
-    AceConfigDialog:AddToBlizOptions(self.name)
+    Fontmancer:CreateOptionsPanel()
 
     -- Change some of the fonts on addon load event otherwise it will not actually apply
     self.frame:RegisterEvent("ADDON_LOADED")
@@ -235,18 +54,11 @@ end
 function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
-        self:ApplyFont()
+        self:ApplyReplacements()
     end)
 end
 
-function Fontmancer:ApplyFont()
-    local selectedFont = self.db.global.selectedFont
-    if not selectedFont then
-        return
-    end
-
-    local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
-
+function Fontmancer:ApplyReplacements()
     for frameName in pairs(_G) do
         local frame = _G[frameName]
         if frame and type(frame) == "table" then
@@ -254,17 +66,42 @@ function Fontmancer:ApplyFont()
             local isForbidden = frame.IsForbidden and pcall(frame.IsForbidden, frame) and frame:IsForbidden()
             local hasFont = frame.GetFont and pcall(frame.GetFont, frame) and frame:GetFont()
             if not isExcluded and not isForbidden and hasFont then
-                local _, height, flags = frame:GetFont()
+                -- Store the original font values so users can reapply height, flags, etc... without needing to reload the UI
+                self:StoreOriginals(frameName, frame)
 
-                -- Store the original font values so users can reapply offsets / flags without needing to reload the UI
-                if not self.originalFonts[frameName] then
-                    self.originalFonts[frameName] = { HEIGHT = height, FLAGS = flags }
-                end
-
-                local newHeight = max(self.originalFonts[frameName].HEIGHT + self.db.global.offsets.height, 0.5)
-                frame:SetFont(fetchedFont, newHeight, self:BuildFlags(frameName))
+                -- Apply all the options
+                self:ApplyFont(frameName, frame)
+                self:ApplySpacing(frameName, frame)
+                self:ApplyTextColour(frameName, frame)
+                self:ApplyIndent(frameName, frame)
             end
         end
+    end
+end
+
+function Fontmancer:StoreOriginals(fontName, font)
+    if not self.originalFonts[fontName] then
+        -- Height and flags
+        local _, height, flags = font:GetFont()
+        self.originalFonts[fontName] = { HEIGHT = height, FLAGS = flags }
+
+        -- Spacing
+        self.originalFonts[fontName].SPACING = font:GetSpacing()
+        -- Colour
+        local r, g, b, a = font:GetTextColor()
+        self.originalFonts[fontName].COLOUR = { r = r, g = g, b = b, a = a }
+
+        -- Indent
+        self.originalFonts[fontName].INDENT = font:GetIndentedWordWrap()
+    end
+end
+
+function Fontmancer:ApplyFont(fontName, font)
+    local selectedFont = self.db.global.selectedFont
+    if selectedFont then
+        local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
+        local newHeight = max(self.originalFonts[fontName].HEIGHT + self.db.global.offsets.height, 0.5)
+        font:SetFont(fetchedFont, newHeight, self:BuildFlags(fontName))
     end
 end
 
@@ -282,30 +119,31 @@ function Fontmancer:BuildFlags(fontName)
     return table.concat(newFlagsSplit, ", ")
 end
 
-function Fontmancer:ShouldReloadForFonts()
-    -- Show the warning when we change the font
-    return self.db.global.selectedFont ~= self.initiallySelectedFont
+function Fontmancer:ApplySpacing(fontName, font)
+    font:SetSpacing(self.originalFonts[fontName].SPACING + self.db.global.offsets.spacing)
 end
 
-function Fontmancer:ShouldReloadForNameplates()
-    -- Show the warning when we toggle "Exclude Nameplates" on
-    return self.db.global.excludeNameplates and not self.previousExcludeNameplates
+function Fontmancer:ApplyTextColour(fontName, font)
+    local colour = self.db.global.colour
+    if self.db.global.enableColour then
+        if self.db.global.enableAlpha then
+            font:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+        else
+            font:SetTextColor(colour.r, colour.g, colour.b)
+        end
+    else
+        local originalColour = self.originalFonts[fontName].COLOUR
+        if originalColour then
+            if self.db.global.enableAlpha then
+                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
+            else
+                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+            end
+        end
+    end
 end
 
-function Fontmancer:IncrementAndFetchOptionOrder()
-    self.optionOrder = self.optionOrder + 1
-    return self.optionOrder
-end
-
-function Fontmancer:CreateSpacing()
-    return {
-        order = self:IncrementAndFetchOptionOrder(),
-        type = "description",
-        name = " ",
-        width = "full",
-    }
-end
-
-function Fontmancer:ColourText(text)
-    return "|cff" .. self.colour .. text .. "|r"
+function Fontmancer:ApplyIndent(fontName, font)
+    local indent = self.db.global.forceIndent
+    font:SetIndentedWordWrap(indent or (indent == false and self.originalFonts[fontName].INDENT))
 end
