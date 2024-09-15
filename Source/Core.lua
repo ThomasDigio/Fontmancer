@@ -11,8 +11,6 @@ Fontmancer.metadata = {
     LOGO_PATH = "IconTexture",
     DESCRIPTION = "Notes"
 }
-Fontmancer.optionOrder = 0
-Fontmancer.colour = "fff78c"
 Fontmancer.originalFonts = {}
 Fontmancer.frame = CreateFrame("FRAME")
 
@@ -22,21 +20,23 @@ function Fontmancer:OnInitialize()
         self.metadata[keyName] = C_AddOns.GetAddOnMetadata(addonName, keyValue)
     end
 
-    -- Initialise the database
-    local databaseDefaults = {
+    -- Setup the options database + panel
+    self.databaseDefaults = {
         global = {
-            offsets = { height = 0 },
+            selectedFont = nil,
             excludeNameplates = false,
+            offsets = { height = 0 },
+            enableColour = false,
+            enableAlpha = false,
+            colour = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
-            selectedFont = nil
+            forceIndent = false,
         }
     }
-    self.db = AceDB:New(addonName .. "DB", databaseDefaults)
+    self.db = AceDB:New(addonName .. "DB", self.databaseDefaults)
     Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
     Fontmancer.initiallySelectedFont = self.db.global.selectedFont
-
-    -- Create the options
-    Fontmancer:CreateOptions()
+    Fontmancer:CreateOptionsPanel()
 
     -- Change some of the fonts on addon load event otherwise it will not actually apply
     self.frame:RegisterEvent("ADDON_LOADED")
@@ -73,20 +73,34 @@ function Fontmancer:ApplyFont()
             local isForbidden = frame.IsForbidden and pcall(frame.IsForbidden, frame) and frame:IsForbidden()
             local hasFont = frame.GetFont and pcall(frame.GetFont, frame) and frame:GetFont()
             if not isExcluded and not isForbidden and hasFont then
-                local _, height, flags = frame:GetFont()
+                -- Store the original font values so users can reapply height, flags, etc... without needing to reload the UI
+                self:StoreOriginals(frameName, frame)
 
-                -- Store the original font values so users can reapply offsets / flags without needing to reload the UI
-                if not self.originalFonts[frameName] then
-                    self.originalFonts[frameName] = { HEIGHT = height, FLAGS = flags }
-                end
-
+                -- Apply all the options
                 local newHeight = max(self.originalFonts[frameName].HEIGHT + self.db.global.offsets.height, 0.5)
                 frame:SetFont(fetchedFont, newHeight, self:BuildFlags(frameName))
+                self:ApplyTextColour(frameName, frame)
+                self:ApplyIndent(frameName, frame)
             end
         end
     end
 end
 
+function Fontmancer:StoreOriginals(fontName, font)
+    if not self.originalFonts[fontName] then
+        -- Height and flags
+        local _, height, flags = font:GetFont()
+        self.originalFonts[fontName] = { HEIGHT = height, FLAGS = flags }
+
+        -- Colour
+        local r, g, b, a = font:GetTextColor()
+        self.originalFonts[fontName].COLOUR = { r = r, g = g, b = b, a = a }
+
+        -- Indent
+        local indent = font:GetIndentedWordWrap()
+        self.originalFonts[fontName].INDENT = indent
+    end
+end
 function Fontmancer:BuildFlags(fontName)
     local newFlagsSplit = {}
 
@@ -101,3 +115,27 @@ function Fontmancer:BuildFlags(fontName)
     return table.concat(newFlagsSplit, ", ")
 end
 
+function Fontmancer:ApplyTextColour(fontName, font)
+    local colour = self.db.global.colour
+    if self.db.global.enableColour then
+        if self.db.global.enableAlpha then
+            font:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+        else
+            font:SetTextColor(colour.r, colour.g, colour.b)
+        end
+    else
+        local originalColour = self.originalFonts[fontName].COLOUR
+        if originalColour then
+            if self.db.global.enableAlpha then
+                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
+            else
+                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+            end
+        end
+    end
+end
+
+function Fontmancer:ApplyIndent(fontName, font)
+    local indent = self.db.global.forceIndent
+    font:SetIndentedWordWrap(indent or (indent == false and self.originalFonts[fontName].INDENT))
+end

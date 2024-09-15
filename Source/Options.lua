@@ -7,6 +7,9 @@ local LSM = LibStub("LibSharedMedia-3.0")
 ---@class Fontmancer: AceAddon
 local Fontmancer = AceAddon:GetAddon(addonName)
 
+Fontmancer.optionOrder = 0
+Fontmancer.colour = "fff78c"
+
 function Fontmancer:ShouldReloadForFonts()
     -- Show the warning when we change the font
     return self.db.global.selectedFont ~= self.initiallySelectedFont
@@ -35,7 +38,7 @@ function Fontmancer:ColourText(text)
     return "|cff" .. self.colour .. text .. "|r"
 end
 
-function Fontmancer:CreateOptions()
+function Fontmancer:CreateOptionsPanel()
     local options = {
         name = self.metadata.TITLE,
         handler = Fontmancer,
@@ -62,7 +65,7 @@ function Fontmancer:CreateOptions()
                 type = "description",
                 name = self.metadata.DESCRIPTION,
                 fontSize = "medium",
-                width = 3.1,
+                width = 3,
             },
             -- CONFIG
             configHeader = {
@@ -174,7 +177,55 @@ function Fontmancer:CreateOptions()
                     },
                 },
             },
-            offsetGroupSpacing = self:CreateSpacing(),
+            colourGroup = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "group",
+                name = "Colour",
+                inline = true,
+                args = {
+                    colourPicker = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "color",
+                        name = "",
+                        width = 0.2,
+                        hasAlpha = true,
+                        get = function(_)
+                            local colour = self.db.global.colour
+                            return colour.r, colour.g, colour.b, colour.a
+                        end,
+                        set = function(_, r, g, b, a)
+                            self.db.global.colour = { r = r, g = g, b = b, a = a }
+                            if self.db.global.enableColour or self.db.global.enableAlpha then
+                                self:ApplyFont()
+                            end
+                        end,
+                    },
+                    colourToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "Replace colour",
+                        get = function(_)
+                            return self.db.global.enableColour
+                        end,
+                        set = function(_, value)
+                            self.db.global.enableColour = value
+                            self:ApplyFont()
+                        end,
+                    },
+                    alphaToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "Replace alpha",
+                        get = function(_)
+                            return self.db.global.enableAlpha
+                        end,
+                        set = function(_, value)
+                            self.db.global.enableAlpha = value
+                            self:ApplyFont()
+                        end,
+                    },
+                },
+            },
             flagGroup = {
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "group",
@@ -188,7 +239,7 @@ function Fontmancer:CreateOptions()
                             "• Unchecked means it will leave it as it is\n" ..
                             "• Checked means it will apply it everywhere\n" ..
                             "• Greyed out means it will remove it everywhere\n",
-                        width = 1.8,
+                        width = 1.75,
                     },
                     flagNameDescription = {
                         order = self:IncrementAndFetchOptionOrder(),
@@ -197,7 +248,7 @@ function Fontmancer:CreateOptions()
                             "• " .. self:ColourText("Monochrome") .. ": Font is rendered without antialiasing\n" ..
                             "• " .. self:ColourText("Outline") .. ": Font is displayed with a black outline\n" ..
                             "• " .. self:ColourText("Thick") .. ": Font is displayed with a thick black outline\n",
-                        width = 1.8,
+                        width = 1.75,
                     },
                     flagsSelector = {
                         order = self:IncrementAndFetchOptionOrder(),
@@ -213,10 +264,25 @@ function Fontmancer:CreateOptions()
                             self:ApplyFont()
                         end,
                     },
+                    indentToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "Indent on word wrap",
+                        tristate = true,
+                        -- width = 1.5,
+                        get = function(_)
+                            return self.db.global.forceIndent
+                        end,
+                        set = function(_, value)
+                            self.db.global.forceIndent = value
+                            self:ApplyFont()
+                        end,
+                    },
                 },
             },
         },
     }
+
     AceConfigRegistry:RegisterOptionsTable(self.name, options)
     AceConfigDialog:AddToBlizOptions(self.name)
 end
