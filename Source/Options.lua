@@ -279,20 +279,20 @@ function Fontmancer:CreateOptionsPanel()
                             self:ApplyReplacements()
                         end,
                     },
-                    indentToggle = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "toggle",
-                        name = "Indent on word wrap",
-                        tristate = true,
-                        -- width = 1.5,
-                        get = function(_)
-                            return self.db.global.forceIndent
-                        end,
-                        set = function(_, value)
-                            self.db.global.forceIndent = value
-                            self:ApplyReplacements()
-                        end,
-                    },
+                    -- indentToggle = {
+                    --     order = self:IncrementAndFetchOptionOrder(),
+                    --     type = "toggle",
+                    --     name = "Indent on word wrap",
+                    --     tristate = true,
+                    --     -- width = 1.5,
+                    --     get = function(_)
+                    --         return self.db.global.forceIndent
+                    --     end,
+                    --     set = function(_, value)
+                    --         self.db.global.forceIndent = value
+                    --         self:ApplyReplacements()
+                    --     end,
+                    -- },
                 },
             },
         },

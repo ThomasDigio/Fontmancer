@@ -73,7 +73,8 @@ function Fontmancer:ApplyReplacements()
                 self:ApplyFont(frameName, frame)
                 self:ApplySpacing(frameName, frame)
                 self:ApplyTextColour(frameName, frame)
-                self:ApplyIndent(frameName, frame)
+                -- Except indent, because that is completely broken for some reason
+                -- self:ApplyIndent(frameName, frame)
             end
         end
     end
