@@ -86,7 +86,7 @@ function Fontmancer:CreateOptionsPanel()
                 end,
                 set = function(_, value)
                     self.db.global.selectedFont = value
-                    self:ApplyFont()
+                    self:ApplyReplacements()
                 end,
             },
             fontReloadImage = {
@@ -124,7 +124,7 @@ function Fontmancer:CreateOptionsPanel()
                 set = function(_, value)
                     self.previousExcludeNameplates = self.db.global.excludeNameplates
                     self.db.global.excludeNameplates = value
-                    self:ApplyFont()
+                    self:ApplyReplacements()
                 end,
                 width = 0.9,
             },
@@ -172,7 +172,22 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.offsets.height = value
-                            self:ApplyFont()
+                            self:ApplyReplacements()
+                        end,
+                    },
+                    spacingSelector = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "range",
+                        name = "Spacing",
+                        min = -10,
+                        max = 10,
+                        step = 0.5,
+                        get = function(_)
+                            return self.db.global.offsets.spacing
+                        end,
+                        set = function(_, value)
+                            self.db.global.offsets.spacing = value
+                            self:ApplyReplacements()
                         end,
                     },
                 },
@@ -196,7 +211,7 @@ function Fontmancer:CreateOptionsPanel()
                         set = function(_, r, g, b, a)
                             self.db.global.colour = { r = r, g = g, b = b, a = a }
                             if self.db.global.enableColour or self.db.global.enableAlpha then
-                                self:ApplyFont()
+                                self:ApplyReplacements()
                             end
                         end,
                     },
@@ -209,7 +224,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.enableColour = value
-                            self:ApplyFont()
+                            self:ApplyReplacements()
                         end,
                     },
                     alphaToggle = {
@@ -221,7 +236,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.enableAlpha = value
-                            self:ApplyFont()
+                            self:ApplyReplacements()
                         end,
                     },
                 },
@@ -261,7 +276,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, name, value)
                             self.db.global.flags[name] = value
-                            self:ApplyFont()
+                            self:ApplyReplacements()
                         end,
                     },
                     indentToggle = {
@@ -275,7 +290,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.forceIndent = value
-                            self:ApplyFont()
+                            self:ApplyReplacements()
                         end,
                     },
                 },

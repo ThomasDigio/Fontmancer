@@ -25,7 +25,7 @@ function Fontmancer:OnInitialize()
         global = {
             selectedFont = nil,
             excludeNameplates = false,
-            offsets = { height = 0 },
+            offsets = { height = 0, spacing = 0 },
             enableColour = false,
             enableAlpha = false,
             colour = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
@@ -54,18 +54,11 @@ end
 function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
-        self:ApplyFont()
+        self:ApplyReplacements()
     end)
 end
 
-function Fontmancer:ApplyFont()
-    local selectedFont = self.db.global.selectedFont
-    if not selectedFont then
-        return
-    end
-
-    local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
-
+function Fontmancer:ApplyReplacements()
     for frameName in pairs(_G) do
         local frame = _G[frameName]
         if frame and type(frame) == "table" then
@@ -77,8 +70,8 @@ function Fontmancer:ApplyFont()
                 self:StoreOriginals(frameName, frame)
 
                 -- Apply all the options
-                local newHeight = max(self.originalFonts[frameName].HEIGHT + self.db.global.offsets.height, 0.5)
-                frame:SetFont(fetchedFont, newHeight, self:BuildFlags(frameName))
+                self:ApplyFont(frameName, frame)
+                self:ApplySpacing(frameName, frame)
                 self:ApplyTextColour(frameName, frame)
                 self:ApplyIndent(frameName, frame)
             end
@@ -92,15 +85,26 @@ function Fontmancer:StoreOriginals(fontName, font)
         local _, height, flags = font:GetFont()
         self.originalFonts[fontName] = { HEIGHT = height, FLAGS = flags }
 
+        -- Spacing
+        self.originalFonts[fontName].SPACING = font:GetSpacing()
         -- Colour
         local r, g, b, a = font:GetTextColor()
         self.originalFonts[fontName].COLOUR = { r = r, g = g, b = b, a = a }
 
         -- Indent
-        local indent = font:GetIndentedWordWrap()
-        self.originalFonts[fontName].INDENT = indent
+        self.originalFonts[fontName].INDENT = font:GetIndentedWordWrap()
     end
 end
+
+function Fontmancer:ApplyFont(fontName, font)
+    local selectedFont = self.db.global.selectedFont
+    if selectedFont then
+        local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
+        local newHeight = max(self.originalFonts[fontName].HEIGHT + self.db.global.offsets.height, 0.5)
+        font:SetFont(fetchedFont, newHeight, self:BuildFlags(fontName))
+    end
+end
+
 function Fontmancer:BuildFlags(fontName)
     local newFlagsSplit = {}
 
@@ -113,6 +117,10 @@ function Fontmancer:BuildFlags(fontName)
     end
 
     return table.concat(newFlagsSplit, ", ")
+end
+
+function Fontmancer:ApplySpacing(fontName, font)
+    font:SetSpacing(self.originalFonts[fontName].SPACING + self.db.global.offsets.spacing)
 end
 
 function Fontmancer:ApplyTextColour(fontName, font)
