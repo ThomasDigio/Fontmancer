@@ -26,9 +26,13 @@ function Fontmancer:OnInitialize()
             selectedFont = nil,
             excludeNameplates = false,
             offsets = { height = 0, spacing = 0 },
-            enableColour = false,
-            enableAlpha = false,
-            colour = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+            enableTextColour = false,
+            enableTextAlpha = false,
+            textColour = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+            enableShadowColour = false,
+            enableShadowAlpha = false,
+            shadowColour = { r = 0, g = 0, b = 0, a = 1 },
+            shadowOffset = { x = 1, y = -1 },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
             forceIndent = false,
         }
@@ -73,6 +77,7 @@ function Fontmancer:ApplyReplacements()
                 self:ApplyFont(frameName, frame)
                 self:ApplySpacing(frameName, frame)
                 self:ApplyTextColour(frameName, frame)
+                self:ApplyShadow(frameName, frame)
                 -- Except indent, because that is completely broken for some reason
                 -- self:ApplyIndent(frameName, frame)
             end
@@ -88,9 +93,15 @@ function Fontmancer:StoreOriginals(fontName, font)
 
         -- Spacing
         self.originalFonts[fontName].SPACING = font:GetSpacing()
+
         -- Colour
-        local r, g, b, a = font:GetTextColor()
-        self.originalFonts[fontName].COLOUR = { r = r, g = g, b = b, a = a }
+        local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
+        self.originalFonts[fontName].COLOUR = { r = textRed, g = textGreen, b = textBlue, a = textAlpha }
+
+        -- Shadow
+        local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
+        local x, y = font:GetShadowOffset()
+        self.originalFonts[fontName].SHADOW = { COLOUR = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }, OFFSET = { x = x, y = y } }
 
         -- Indent
         self.originalFonts[fontName].INDENT = font:GetIndentedWordWrap()
@@ -125,9 +136,9 @@ function Fontmancer:ApplySpacing(fontName, font)
 end
 
 function Fontmancer:ApplyTextColour(fontName, font)
-    local colour = self.db.global.colour
-    if self.db.global.enableColour then
-        if self.db.global.enableAlpha then
+    local colour = self.db.global.textColour
+    if self.db.global.enableTextColour then
+        if self.db.global.enableTextAlpha then
             font:SetTextColor(colour.r, colour.g, colour.b, colour.a)
         else
             font:SetTextColor(colour.r, colour.g, colour.b)
@@ -135,13 +146,37 @@ function Fontmancer:ApplyTextColour(fontName, font)
     else
         local originalColour = self.originalFonts[fontName].COLOUR
         if originalColour then
-            if self.db.global.enableAlpha then
+            if self.db.global.enableTextAlpha then
                 font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
             else
                 font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
             end
         end
     end
+end
+
+function Fontmancer:ApplyShadow(fontName, font)
+    -- Colour
+    local colour = self.db.global.shadowColour
+    if self.db.global.enableShadowColour then
+        if self.db.global.enableShadowAlpha then
+            font:SetShadowColor(colour.r, colour.g, colour.b, colour.a)
+        else
+            font:SetShadowColor(colour.r, colour.g, colour.b)
+        end
+    else
+        local originalColour = self.originalFonts[fontName].SHADOW.COLOUR
+        if originalColour then
+            if self.db.global.enableShadowAlpha then
+                font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
+            else
+                font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+            end
+        end
+    end
+
+    -- Offset
+    font:SetShadowOffset(self.db.global.shadowOffset.x, self.db.global.shadowOffset.y)
 end
 
 function Fontmancer:ApplyIndent(fontName, font)

@@ -205,12 +205,12 @@ function Fontmancer:CreateOptionsPanel()
                         width = 0.2,
                         hasAlpha = true,
                         get = function(_)
-                            local colour = self.db.global.colour
+                            local colour = self.db.global.textColour
                             return colour.r, colour.g, colour.b, colour.a
                         end,
                         set = function(_, r, g, b, a)
-                            self.db.global.colour = { r = r, g = g, b = b, a = a }
-                            if self.db.global.enableColour or self.db.global.enableAlpha then
+                            self.db.global.textColour = { r = r, g = g, b = b, a = a }
+                            if self.db.global.enableTextColour or self.db.global.enableTextAlpha then
                                 self:ApplyReplacements()
                             end
                         end,
@@ -220,10 +220,10 @@ function Fontmancer:CreateOptionsPanel()
                         type = "toggle",
                         name = "Replace colour",
                         get = function(_)
-                            return self.db.global.enableColour
+                            return self.db.global.enableTextColour
                         end,
                         set = function(_, value)
-                            self.db.global.enableColour = value
+                            self.db.global.enableTextColour = value
                             self:ApplyReplacements()
                         end,
                     },
@@ -232,10 +232,90 @@ function Fontmancer:CreateOptionsPanel()
                         type = "toggle",
                         name = "Replace alpha",
                         get = function(_)
-                            return self.db.global.enableAlpha
+                            return self.db.global.enableTextAlpha
                         end,
                         set = function(_, value)
-                            self.db.global.enableAlpha = value
+                            self.db.global.enableTextAlpha = value
+                            self:ApplyReplacements()
+                        end,
+                    },
+                },
+            },
+            shadowGroup = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "group",
+                name = "Shadow",
+                inline = true,
+                args = {
+                    shadowColourPicker = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "color",
+                        name = "",
+                        width = 0.2,
+                        hasAlpha = true,
+                        get = function(_)
+                            local colour = self.db.global.shadowColour
+                            return colour.r, colour.g, colour.b, colour.a
+                        end,
+                        set = function(_, r, g, b, a)
+                            self.db.global.shadowColour = { r = r, g = g, b = b, a = a }
+                            if self.db.global.enableShadowColour or self.db.global.enableShadowAlpha then
+                                self:ApplyReplacements()
+                            end
+                        end,
+                    },
+                    shadowColourToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "Replace colour",
+                        get = function(_)
+                            return self.db.global.enableShadowColour
+                        end,
+                        set = function(_, value)
+                            self.db.global.enableShadowColour = value
+                            self:ApplyReplacements()
+                        end,
+                    },
+                    shadowAlphaToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "Replace alpha",
+                        get = function(_)
+                            return self.db.global.enableShadowAlpha
+                        end,
+                        set = function(_, value)
+                            self.db.global.enableShadowAlpha = value
+                            self:ApplyReplacements()
+                        end,
+                    },
+                    shadowSpacing = self:CreateSpacing(),
+                    shadowXOffsetSelector = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "range",
+                        name = "X offset",
+                        min = -10,
+                        max = 10,
+                        step = 0.5,
+                        get = function(_)
+                            return self.db.global.shadowOffset.x
+                        end,
+                        set = function(_, value)
+                            self.db.global.shadowOffset.x = value
+                            self:ApplyReplacements()
+                        end,
+                    },
+                    shadowYOffsetSelector = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "range",
+                        name = "Y offset",
+                        min = -10,
+                        max = 10,
+                        step = 0.5,
+                        get = function(_)
+                            return self.db.global.shadowOffset.y
+                        end,
+                        set = function(_, value)
+                            self.db.global.shadowOffset.y = value
                             self:ApplyReplacements()
                         end,
                     },
