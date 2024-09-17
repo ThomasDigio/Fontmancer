@@ -34,6 +34,14 @@ function Fontmancer:CreateSpacing()
     }
 end
 
+function Fontmancer:CreateGroupTitle(text)
+    return {
+        order = self:IncrementAndFetchOptionOrder(),
+        type = "description",
+        name = self:ColourText(text),
+        fontSize = "medium"
+    }
+end
 function Fontmancer:ColourText(text)
     return "|cff" .. self.colour .. text .. "|r"
 end
@@ -160,10 +168,11 @@ function Fontmancer:CreateOptionsPanel()
                 name = "Offsets",
                 inline = true,
                 args = {
+                    textOffsetDescription = self:CreateGroupTitle("Text"),
                     heightSelector = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "range",
-                        name = "Height",
+                        name = "Size",
                         min = -10,
                         max = 10,
                         step = 0.5,
@@ -190,35 +199,69 @@ function Fontmancer:CreateOptionsPanel()
                             self:ApplyReplacements()
                         end,
                     },
+                    offsetSpacing = self:CreateSpacing(),
+                    shadowOffsetDescription = self:CreateGroupTitle("Shadow"),
+                    xShadowSelector = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "range",
+                        name = "Horizontal",
+                        min = -10,
+                        max = 10,
+                        step = 0.5,
+                        get = function(_)
+                            return self.db.global.offsets.shadow.x
+                        end,
+                        set = function(_, value)
+                            self.db.global.offsets.shadow.x = value
+                            self:ApplyReplacements()
+                        end,
+                    },
+                    yShadowSelector = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "range",
+                        name = "Vertical",
+                        min = -10,
+                        max = 10,
+                        step = 0.5,
+                        get = function(_)
+                            return self.db.global.offsets.shadow.y
+                        end,
+                        set = function(_, value)
+                            self.db.global.offsets.shadow.y = value
+                            self:ApplyReplacements()
+                        end,
+                    },
                 },
             },
             colourGroup = {
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "group",
-                name = "Colour",
+                name = "Colours",
                 inline = true,
                 args = {
-                    colourPicker = {
+                    textColourDescription = self:CreateGroupTitle("Text"),
+                    textColourPicker = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "color",
                         name = "",
                         width = 0.2,
                         hasAlpha = true,
                         get = function(_)
-                            local colour = self.db.global.textColour
+                            local colour = self.db.global.colours.text
                             return colour.r, colour.g, colour.b, colour.a
                         end,
                         set = function(_, r, g, b, a)
-                            self.db.global.textColour = { r = r, g = g, b = b, a = a }
+                            self.db.global.colours.text = { r = r, g = g, b = b, a = a }
                             if self.db.global.enableTextColour or self.db.global.enableTextAlpha then
                                 self:ApplyReplacements()
                             end
                         end,
                     },
-                    colourToggle = {
+                    textColourToggle = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "toggle",
                         name = "Replace colour",
+                        width = 0.75,
                         get = function(_)
                             return self.db.global.enableTextColour
                         end,
@@ -227,10 +270,11 @@ function Fontmancer:CreateOptionsPanel()
                             self:ApplyReplacements()
                         end,
                     },
-                    alphaToggle = {
+                    textAlphaToggle = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "toggle",
                         name = "Replace alpha",
+                        width = 0.75,
                         get = function(_)
                             return self.db.global.enableTextAlpha
                         end,
@@ -239,14 +283,8 @@ function Fontmancer:CreateOptionsPanel()
                             self:ApplyReplacements()
                         end,
                     },
-                },
-            },
-            shadowGroup = {
-                order = self:IncrementAndFetchOptionOrder(),
-                type = "group",
-                name = "Shadow",
-                inline = true,
-                args = {
+                    colourSpacing = self:CreateSpacing(),
+                    shadowColourDescription = self:CreateGroupTitle("Shadow"),
                     shadowColourPicker = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "color",
@@ -254,11 +292,11 @@ function Fontmancer:CreateOptionsPanel()
                         width = 0.2,
                         hasAlpha = true,
                         get = function(_)
-                            local colour = self.db.global.shadowColour
+                            local colour = self.db.global.colours.shadow
                             return colour.r, colour.g, colour.b, colour.a
                         end,
                         set = function(_, r, g, b, a)
-                            self.db.global.shadowColour = { r = r, g = g, b = b, a = a }
+                            self.db.global.colours.shadow = { r = r, g = g, b = b, a = a }
                             if self.db.global.enableShadowColour or self.db.global.enableShadowAlpha then
                                 self:ApplyReplacements()
                             end
@@ -268,6 +306,7 @@ function Fontmancer:CreateOptionsPanel()
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "toggle",
                         name = "Replace colour",
+                        width = 0.75,
                         get = function(_)
                             return self.db.global.enableShadowColour
                         end,
@@ -280,42 +319,12 @@ function Fontmancer:CreateOptionsPanel()
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "toggle",
                         name = "Replace alpha",
+                        width = 0.75,
                         get = function(_)
                             return self.db.global.enableShadowAlpha
                         end,
                         set = function(_, value)
                             self.db.global.enableShadowAlpha = value
-                            self:ApplyReplacements()
-                        end,
-                    },
-                    shadowSpacing = self:CreateSpacing(),
-                    shadowXOffsetSelector = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "range",
-                        name = "X offset",
-                        min = -10,
-                        max = 10,
-                        step = 0.5,
-                        get = function(_)
-                            return self.db.global.shadowOffset.x
-                        end,
-                        set = function(_, value)
-                            self.db.global.shadowOffset.x = value
-                            self:ApplyReplacements()
-                        end,
-                    },
-                    shadowYOffsetSelector = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "range",
-                        name = "Y offset",
-                        min = -10,
-                        max = 10,
-                        step = 0.5,
-                        get = function(_)
-                            return self.db.global.shadowOffset.y
-                        end,
-                        set = function(_, value)
-                            self.db.global.shadowOffset.y = value
                             self:ApplyReplacements()
                         end,
                     },
