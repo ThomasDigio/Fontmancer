@@ -12,7 +12,6 @@ Fontmancer.metadata = {
     DESCRIPTION = "Notes"
 }
 Fontmancer.originalFonts = {}
-Fontmancer.frame = CreateFrame("FRAME")
 
 function Fontmancer:OnInitialize()
     -- Fetch metadata
@@ -36,21 +35,26 @@ function Fontmancer:OnInitialize()
         }
     }
     self.db = AceDB:New(addonName .. "DB", self.databaseDefaults)
-    Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
-    Fontmancer.initiallySelectedFont = self.db.global.selectedFont
-    Fontmancer:CreateOptionsPanel()
+    self.previousExcludeNameplates = self.db.global.excludeNameplates
+    self.initiallySelectedFont = self.db.global.selectedFont
+    self:CreateOptionsPanel()
+    -- self:CreateAdvancedOptionsPanel()
 
     -- Change some of the fonts on addon load event otherwise it will not actually apply
-    self.frame:RegisterEvent("ADDON_LOADED")
-    self.frame:SetScript("OnEvent", function()
+    local eventFrame = CreateFrame("FRAME")
+    eventFrame:RegisterEvent("ADDON_LOADED")
+    eventFrame:SetScript("OnEvent", function()
         local selectedFont = self.db.global.selectedFont
         if selectedFont then
             local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
             DAMAGE_TEXT_FONT = fetchedFont
             UNIT_NAME_FONT = fetchedFont
-            -- STANDARD_TEXT_FONT? NAMEPLATE_FONT?
+            STANDARD_TEXT_FONT = fetchedFont
+            NAMEPLATE_FONT = fetchedFont
         end
     end)
+
+    -- self:InitialiseInspector()
 end
 
 function Fontmancer:OnEnable()

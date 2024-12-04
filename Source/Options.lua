@@ -42,6 +42,7 @@ function Fontmancer:CreateGroupTitle(text)
         fontSize = "medium"
     }
 end
+
 function Fontmancer:ColourText(text)
     return "|cff" .. self.colour .. text .. "|r"
 end
@@ -113,7 +114,7 @@ function Fontmancer:CreateOptionsPanel()
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "description",
                 name =
-                "|cffff9900You will need to fully logout / exit the game for that option to take effect on floating combat text!|r",
+                "|cffff9900You will need to fully exit/logout for that option to take effect on some rare fonts, such as floating combat text|r",
                 hidden = function()
                     return not self:ShouldReloadForFonts()
                 end,
