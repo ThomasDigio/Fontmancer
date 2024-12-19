@@ -25,11 +25,10 @@ function Fontmancer:OnInitialize()
             selectedFont = nil,
             excludeNameplates = false,
             offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
-            enableTextColour = false,
-            enableTextAlpha = false,
-            enableShadowColour = false,
-            enableShadowAlpha = false,
-            colours = { text = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 }, shadow = { r = 0, g = 0, b = 0, a = 1 } },
+            colours = {
+                text = { isColourEnabled = false, isAlphaEnabled = false, r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+                shadow = { isColourEnabled = false, isAlphaEnabled = false, r = 0, g = 0, b = 0, a = 1 }
+            },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
             forceIndent = false,
         }
@@ -61,6 +60,7 @@ function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
         self:ApplyReplacements()
+        self:ApplyCallbacks()
     end)
 end
 
@@ -84,25 +84,6 @@ function Fontmancer:ApplyReplacements()
                 -- self:ApplyIndent(frameName, frame)
             end
         end
-    end
-end
-
-function Fontmancer:StoreOriginals(fontName, font)
-    if not self.originalFonts[fontName] then
-        local _, height, flags = font:GetFont()
-        self.originalFonts[fontName] = {
-            height = height,
-            flags = flags,
-            spacing = font:GetSpacing(),
-            indent = font:GetIndentedWordWrap()
-        }
-
-        local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
-        self.originalFonts[fontName].colour = { r = textRed, g = textGreen, b = textBlue, a = textAlpha }
-
-        local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
-        local shadowX, shadowY = font:GetShadowOffset()
-        self.originalFonts[fontName].shadow = { colour = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }, offset = { x = shadowX, y = shadowY } }
     end
 end
 
@@ -135,18 +116,20 @@ end
 
 function Fontmancer:ApplyTextColour(fontName, font)
     local colour = self.db.global.colours.text
-    if self.db.global.enableTextColour then
-        if self.db.global.enableTextAlpha then
-            font:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+    local originalColour = self.originalFonts[fontName].colour
+
+    if self.db.global.colours.text.isColourEnabled then
+        if self.db.global.colours.text.isAlphaEnabled then
+            font:SetTextColor(colour.r, colour.g, colour.b, colour.a, true)
         else
-            font:SetTextColor(colour.r, colour.g, colour.b)
+            font:SetTextColor(colour.r, colour.g, colour.b, originalColour.a, true)
         end
     else
         local originalColour = self.originalFonts[fontName].colour
-            if self.db.global.enableTextAlpha then
-                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
-            else
-            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        if self.db.global.colours.text.isAlphaEnabled then
+            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a, true)
+        else
+            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
         end
     end
 end
@@ -154,18 +137,19 @@ end
 function Fontmancer:ApplyShadow(fontName, font)
     -- Colour
     local colour = self.db.global.colours.shadow
-    if self.db.global.enableShadowColour then
-        if self.db.global.enableShadowAlpha then
-            font:SetShadowColor(colour.r, colour.g, colour.b, colour.a)
+    local originalColour = self.originalFonts[fontName].shadow.colour
+
+    if self.db.global.colours.shadow.isColourEnabled then
+        if self.db.global.colours.shadow.isAlphaEnabled then
+            font:SetShadowColor(colour.r, colour.g, colour.b, colour.a, true)
         else
-            font:SetShadowColor(colour.r, colour.g, colour.b)
+            font:SetShadowColor(colour.r, colour.g, colour.b, originalColour.a, true)
         end
     else
-        local originalColour = self.originalFonts[fontName].shadow.colour
-            if self.db.global.enableShadowAlpha then
-                font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
-            else
-            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        if self.db.global.colours.shadow.isAlphaEnabled then
+            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, colour.a, true)
+        else
+            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
         end
     end
 

@@ -252,8 +252,11 @@ function Fontmancer:CreateOptionsPanel()
                             return colour.r, colour.g, colour.b, colour.a
                         end,
                         set = function(_, r, g, b, a)
-                            self.db.global.colours.text = { r = r, g = g, b = b, a = a }
-                            if self.db.global.enableTextColour or self.db.global.enableTextAlpha then
+                            self.db.global.colours.text.r = r
+                            self.db.global.colours.text.g = g
+                            self.db.global.colours.text.b = b
+                            self.db.global.colours.text.a = a
+                            if self.db.global.colours.text.isColourEnabled or self.db.global.colours.text.isAlphaEnabled then
                                 self:ApplyReplacements()
                             end
                         end,
@@ -264,10 +267,10 @@ function Fontmancer:CreateOptionsPanel()
                         name = "Replace colour",
                         width = 0.75,
                         get = function(_)
-                            return self.db.global.enableTextColour
+                            return self.db.global.colours.text.isColourEnabled
                         end,
                         set = function(_, value)
-                            self.db.global.enableTextColour = value
+                            self.db.global.colours.text.isColourEnabled = value
                             self:ApplyReplacements()
                         end,
                     },
@@ -277,10 +280,10 @@ function Fontmancer:CreateOptionsPanel()
                         name = "Replace alpha",
                         width = 0.75,
                         get = function(_)
-                            return self.db.global.enableTextAlpha
+                            return self.db.global.colours.text.isAlphaEnabled
                         end,
                         set = function(_, value)
-                            self.db.global.enableTextAlpha = value
+                            self.db.global.colours.text.isAlphaEnabled = value
                             self:ApplyReplacements()
                         end,
                     },
@@ -297,8 +300,11 @@ function Fontmancer:CreateOptionsPanel()
                             return colour.r, colour.g, colour.b, colour.a
                         end,
                         set = function(_, r, g, b, a)
-                            self.db.global.colours.shadow = { r = r, g = g, b = b, a = a }
-                            if self.db.global.enableShadowColour or self.db.global.enableShadowAlpha then
+                            self.db.global.colours.shadow.r = r
+                            self.db.global.colours.shadow.g = g
+                            self.db.global.colours.shadow.b = b
+                            self.db.global.colours.shadow.a = a
+                            if self.db.global.colours.shadow.isColourEnabled or self.db.global.colours.shadow.isAlphaEnabled then
                                 self:ApplyReplacements()
                             end
                         end,
@@ -309,10 +315,10 @@ function Fontmancer:CreateOptionsPanel()
                         name = "Replace colour",
                         width = 0.75,
                         get = function(_)
-                            return self.db.global.enableShadowColour
+                            return self.db.global.colours.shadow.isColourEnabled
                         end,
                         set = function(_, value)
-                            self.db.global.enableShadowColour = value
+                            self.db.global.colours.shadow.isColourEnabled = value
                             self:ApplyReplacements()
                         end,
                     },
@@ -322,10 +328,10 @@ function Fontmancer:CreateOptionsPanel()
                         name = "Replace alpha",
                         width = 0.75,
                         get = function(_)
-                            return self.db.global.enableShadowAlpha
+                            return self.db.global.colours.shadow.isAlphaEnabled
                         end,
                         set = function(_, value)
-                            self.db.global.enableShadowAlpha = value
+                            self.db.global.colours.shadow.isAlphaEnabled = value
                             self:ApplyReplacements()
                         end,
                     },
