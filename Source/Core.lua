@@ -26,8 +26,8 @@ function Fontmancer:OnInitialize()
             excludeNameplates = false,
             offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
             colours = {
-                text = { isColourEnabled = false, isAlphaEnabled = false, r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
-                shadow = { isColourEnabled = false, isAlphaEnabled = false, r = 0, g = 0, b = 0, a = 1 }
+                text = { isEnabled = false, r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+                shadow = { isEnabled = false, r = 0, g = 0, b = 0, a = 1 }
             },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
             forceIndent = false,
@@ -60,11 +60,11 @@ function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
         self:ApplyReplacements()
-        self:ApplyCallbacks()
+        self:HookCallbacks()
     end)
 end
 
-function Fontmancer:ApplyReplacements()
+function Fontmancer:ApplyReplacements(revertingFunction)
     for frameName in pairs(_G) do
         local frame = _G[frameName]
         if frame and type(frame) == "table" then
@@ -75,13 +75,18 @@ function Fontmancer:ApplyReplacements()
                 -- Store the original font values so users can reapply height, flags, etc... without needing to reload the UI
                 self:StoreOriginals(frameName, frame)
 
-                -- Apply all the options
-                self:ApplyFont(frameName, frame)
-                self:ApplySpacing(frameName, frame)
-                self:ApplyTextColour(frameName, frame)
-                self:ApplyShadow(frameName, frame)
-                -- Except indent, because that is completely broken for some reason
-                -- self:ApplyIndent(frameName, frame)
+                if revertingFunction then
+                    revertingFunction(self, frameName, frame, true)
+                else
+                    -- Apply all the options
+                    self:ApplyFont(frameName, frame)
+                    self:ApplySpacing(frameName, frame)
+                    self:ApplyTextColour(frameName, frame)
+                    self:ApplyShadowColour(frameName, frame)
+                    self:ApplyShadowOffset(frameName, frame)
+                    -- Except indent, because that is completely broken for some reason
+                    -- self:ApplyIndent(frameName, frame)
+                end
             end
         end
     end
@@ -111,51 +116,32 @@ function Fontmancer:BuildFlags(fontName)
 end
 
 function Fontmancer:ApplySpacing(fontName, font)
-    font:SetSpacing(self.originalFonts[fontName].spacing + self.db.global.offsets.spacing)
+    font:SetSpacing(self.originalFonts[fontName].offsets.spacing + self.db.global.offsets.spacing)
 end
 
-function Fontmancer:ApplyTextColour(fontName, font)
-    local colour = self.db.global.colours.text
-    local originalColour = self.originalFonts[fontName].colour
-
-    if self.db.global.colours.text.isColourEnabled then
-        if self.db.global.colours.text.isAlphaEnabled then
-            font:SetTextColor(colour.r, colour.g, colour.b, colour.a, true)
-        else
-            font:SetTextColor(colour.r, colour.g, colour.b, originalColour.a, true)
-        end
-    else
-        local originalColour = self.originalFonts[fontName].colour
-        if self.db.global.colours.text.isAlphaEnabled then
-            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a, true)
-        else
-            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
-        end
+function Fontmancer:ApplyTextColour(fontName, font, shouldRevert)
+    local colourSettings = self.db.global.colours.text
+    if shouldRevert then
+        local originalColour = self.originalFonts[fontName].colours.text
+        font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+    elseif colourSettings.isEnabled then
+        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
     end
 end
 
-function Fontmancer:ApplyShadow(fontName, font)
-    -- Colour
-    local colour = self.db.global.colours.shadow
-    local originalColour = self.originalFonts[fontName].shadow.colour
-
-    if self.db.global.colours.shadow.isColourEnabled then
-        if self.db.global.colours.shadow.isAlphaEnabled then
-            font:SetShadowColor(colour.r, colour.g, colour.b, colour.a, true)
-        else
-            font:SetShadowColor(colour.r, colour.g, colour.b, originalColour.a, true)
-        end
-    else
-        if self.db.global.colours.shadow.isAlphaEnabled then
-            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, colour.a, true)
-        else
-            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
-        end
+function Fontmancer:ApplyShadowColour(fontName, font, shouldRevert)
+    local colourSettings = self.db.global.colours.shadow
+    if shouldRevert then
+        local originalColour = self.originalFonts[fontName].colours.shadow
+        font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+    elseif colourSettings.isEnabled then
+        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
     end
+end
 
-    -- Offset
-    local newX = self.originalFonts[fontName].shadow.offset.x + self.db.global.offsets.shadow.x
-    local newY = self.originalFonts[fontName].shadow.offset.y + self.db.global.offsets.shadow.y
+function Fontmancer:ApplyShadowOffset(fontName, font)
+    local newX = self.originalFonts[fontName].offsets.shadow.x + self.db.global.offsets.shadow.x
+    local newY = self.originalFonts[fontName].offsets.shadow.y + self.db.global.offsets.shadow.y
     font:SetShadowOffset(newX, newY)
 end
 

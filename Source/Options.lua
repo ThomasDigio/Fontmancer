@@ -241,6 +241,23 @@ function Fontmancer:CreateOptionsPanel()
                 inline = true,
                 args = {
                     textColourDescription = self:CreateGroupTitle("Text"),
+                    textColourToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "",
+                        width = 0.2,
+                        get = function(_)
+                            return self.db.global.colours.text.isEnabled
+                        end,
+                        set = function(_, value)
+                            self.db.global.colours.text.isEnabled = value
+                            if self.db.global.colours.text.isEnabled then
+                                self:ApplyReplacements()
+                            else
+                                self:ApplyReplacements(self.ApplyTextColour)
+                            end
+                        end,
+                    },
                     textColourPicker = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "color",
@@ -256,39 +273,30 @@ function Fontmancer:CreateOptionsPanel()
                             self.db.global.colours.text.g = g
                             self.db.global.colours.text.b = b
                             self.db.global.colours.text.a = a
-                            if self.db.global.colours.text.isColourEnabled or self.db.global.colours.text.isAlphaEnabled then
+                            if self.db.global.colours.text.isEnabled then
                                 self:ApplyReplacements()
                             end
                         end,
                     },
-                    textColourToggle = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "toggle",
-                        name = "Replace colour",
-                        width = 0.75,
-                        get = function(_)
-                            return self.db.global.colours.text.isColourEnabled
-                        end,
-                        set = function(_, value)
-                            self.db.global.colours.text.isColourEnabled = value
-                            self:ApplyReplacements()
-                        end,
-                    },
-                    textAlphaToggle = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "toggle",
-                        name = "Replace alpha",
-                        width = 0.75,
-                        get = function(_)
-                            return self.db.global.colours.text.isAlphaEnabled
-                        end,
-                        set = function(_, value)
-                            self.db.global.colours.text.isAlphaEnabled = value
-                            self:ApplyReplacements()
-                        end,
-                    },
                     colourSpacing = self:CreateSpacing(),
                     shadowColourDescription = self:CreateGroupTitle("Shadow"),
+                    shadowColourToggle = {
+                        order = self:IncrementAndFetchOptionOrder(),
+                        type = "toggle",
+                        name = "",
+                        width = 0.2,
+                        get = function(_)
+                            return self.db.global.colours.shadow.isEnabled
+                        end,
+                        set = function(_, value)
+                            self.db.global.colours.shadow.isEnabled = value
+                            if self.db.global.colours.shadow.isEnabled then
+                                self:ApplyReplacements()
+                            else
+                                self:ApplyReplacements(self.ApplyShadowColour)
+                            end
+                        end,
+                    },
                     shadowColourPicker = {
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "color",
@@ -304,35 +312,9 @@ function Fontmancer:CreateOptionsPanel()
                             self.db.global.colours.shadow.g = g
                             self.db.global.colours.shadow.b = b
                             self.db.global.colours.shadow.a = a
-                            if self.db.global.colours.shadow.isColourEnabled or self.db.global.colours.shadow.isAlphaEnabled then
+                            if self.db.global.colours.shadow.isEnabled then
                                 self:ApplyReplacements()
                             end
-                        end,
-                    },
-                    shadowColourToggle = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "toggle",
-                        name = "Replace colour",
-                        width = 0.75,
-                        get = function(_)
-                            return self.db.global.colours.shadow.isColourEnabled
-                        end,
-                        set = function(_, value)
-                            self.db.global.colours.shadow.isColourEnabled = value
-                            self:ApplyReplacements()
-                        end,
-                    },
-                    shadowAlphaToggle = {
-                        order = self:IncrementAndFetchOptionOrder(),
-                        type = "toggle",
-                        name = "Replace alpha",
-                        width = 0.75,
-                        get = function(_)
-                            return self.db.global.colours.shadow.isAlphaEnabled
-                        end,
-                        set = function(_, value)
-                            self.db.global.colours.shadow.isAlphaEnabled = value
-                            self:ApplyReplacements()
                         end,
                     },
                 },

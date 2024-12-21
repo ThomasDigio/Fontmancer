@@ -4,15 +4,15 @@ local AceAddon = LibStub("AceAddon-3.0")
 ---@class Fontmancer: AceAddon
 local Fontmancer = AceAddon:GetAddon(addonName)
 
-function Fontmancer:ApplyCallbacks()
+function Fontmancer:HookCallbacks()
     local callbackFrame = CreateFrame("FRAME")
     local fontStringMeta = getmetatable(callbackFrame:CreateFontString()).__index
-    self:ApplyFontCallback(fontStringMeta)
-    self:ApplyTextColorCallback(fontStringMeta)
-    self:ApplyShadowColorCallback(fontStringMeta)
+    self:HookFontCallback(fontStringMeta)
+    self:HookTextColorCallback(fontStringMeta)
+    self:HookShadowColorCallback(fontStringMeta)
 end
 
-function Fontmancer:ApplyFontCallback(table)
+function Fontmancer:HookFontCallback(table)
     hooksecurefunc(table, "SetFont", function(fontString, r, g, b, a, isFontmancerCall)
         if not isFontmancerCall then
             local fontObject = fontString:GetFontObject()
@@ -28,7 +28,7 @@ function Fontmancer:ApplyFontCallback(table)
     end)
 end
 
-function Fontmancer:ApplyTextColorCallback(table)
+function Fontmancer:HookTextColorCallback(table)
     hooksecurefunc(table, "SetTextColor", function(fontString, r, g, b, a, isFontmancerCall)
         if not isFontmancerCall then
             local fontObject = fontString:GetFontObject()
@@ -49,7 +49,7 @@ function Fontmancer:ApplyTextColorCallback(table)
     end)
 end
 
-function Fontmancer:ApplyShadowColorCallback(fontStringMeta)
+function Fontmancer:HookShadowColorCallback(fontStringMeta)
     hooksecurefunc(fontStringMeta, "SetShadowColor", function(fontString, r, g, b, a, isFontmancerCall)
         if not isFontmancerCall then
             local fontObject = fontString:GetFontObject()
@@ -73,18 +73,21 @@ end
 function Fontmancer:StoreOriginals(fontName, font)
     if not self.originalFonts[fontName] then
         local _, height, flags = font:GetFont()
-        self.originalFonts[fontName] = {
-            height = height,
-            flags = flags,
-            spacing = font:GetSpacing(),
-            indent = font:GetIndentedWordWrap()
-        }
-
         local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
-        self.originalFonts[fontName].colour = { r = textRed, g = textGreen, b = textBlue, a = textAlpha }
-
         local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
         local shadowX, shadowY = font:GetShadowOffset()
-        self.originalFonts[fontName].shadow = { colour = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }, offset = { x = shadowX, y = shadowY } }
+        self.originalFonts[fontName] = {
+            colours = {
+                text = { r = textRed, g = textGreen, b = textBlue, a = textAlpha },
+                shadow = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }
+            },
+            flags = flags,
+            height = height,
+            indent = font:GetIndentedWordWrap(),
+            offsets = {
+                shadow = { x = shadowX, y = shadowY },
+                spacing = font:GetSpacing()
+            }
+        }
     end
 end
