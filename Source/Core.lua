@@ -12,7 +12,6 @@ Fontmancer.metadata = {
     DESCRIPTION = "Notes"
 }
 Fontmancer.originalFonts = {}
-Fontmancer.frame = CreateFrame("FRAME")
 
 function Fontmancer:OnInitialize()
     -- Fetch metadata
@@ -26,41 +25,46 @@ function Fontmancer:OnInitialize()
             selectedFont = nil,
             excludeNameplates = false,
             offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
-            enableTextColour = false,
-            enableTextAlpha = false,
-            enableShadowColour = false,
-            enableShadowAlpha = false,
-            colours = { text = { r = 1, g = 247 / 255, b = 140 / 255, a = 1 }, shadow = { r = 0, g = 0, b = 0, a = 1 } },
+            colours = {
+                text = { isEnabled = false, r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+                shadow = { isEnabled = false, r = 0, g = 0, b = 0, a = 1 }
+            },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },
             forceIndent = false,
         }
     }
     self.db = AceDB:New(addonName .. "DB", self.databaseDefaults)
-    Fontmancer.previousExcludeNameplates = self.db.global.excludeNameplates
-    Fontmancer.initiallySelectedFont = self.db.global.selectedFont
-    Fontmancer:CreateOptionsPanel()
+    self.previousExcludeNameplates = self.db.global.excludeNameplates
+    self.initiallySelectedFont = self.db.global.selectedFont
+    self:CreateOptionsPanel()
+    -- self:CreateAdvancedOptionsPanel()
 
     -- Change some of the fonts on addon load event otherwise it will not actually apply
-    self.frame:RegisterEvent("ADDON_LOADED")
-    self.frame:SetScript("OnEvent", function()
+    local eventFrame = CreateFrame("FRAME")
+    eventFrame:RegisterEvent("ADDON_LOADED")
+    eventFrame:SetScript("OnEvent", function()
         local selectedFont = self.db.global.selectedFont
         if selectedFont then
             local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
             DAMAGE_TEXT_FONT = fetchedFont
             UNIT_NAME_FONT = fetchedFont
-            -- STANDARD_TEXT_FONT? NAMEPLATE_FONT?
+            STANDARD_TEXT_FONT = fetchedFont
+            NAMEPLATE_FONT = fetchedFont
         end
     end)
+
+    -- self:InitialiseInspector()
 end
 
 function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
         self:ApplyReplacements()
+        self:HookCallbacks()
     end)
 end
 
-function Fontmancer:ApplyReplacements()
+function Fontmancer:ApplyReplacements(revertingFunction)
     for frameName in pairs(_G) do
         local frame = _G[frameName]
         if frame and type(frame) == "table" then
@@ -71,34 +75,20 @@ function Fontmancer:ApplyReplacements()
                 -- Store the original font values so users can reapply height, flags, etc... without needing to reload the UI
                 self:StoreOriginals(frameName, frame)
 
-                -- Apply all the options
-                self:ApplyFont(frameName, frame)
-                self:ApplySpacing(frameName, frame)
-                self:ApplyTextColour(frameName, frame)
-                self:ApplyShadow(frameName, frame)
-                -- Except indent, because that is completely broken for some reason
-                -- self:ApplyIndent(frameName, frame)
+                if revertingFunction then
+                    revertingFunction(self, frameName, frame, true)
+                else
+                    -- Apply all the options
+                    self:ApplyFont(frameName, frame)
+                    self:ApplySpacing(frameName, frame)
+                    self:ApplyTextColour(frameName, frame)
+                    self:ApplyShadowColour(frameName, frame)
+                    self:ApplyShadowOffset(frameName, frame)
+                    -- Except indent, because that is completely broken for some reason
+                    -- self:ApplyIndent(frameName, frame)
+                end
             end
         end
-    end
-end
-
-function Fontmancer:StoreOriginals(fontName, font)
-    if not self.originalFonts[fontName] then
-        local _, height, flags = font:GetFont()
-        self.originalFonts[fontName] = {
-            height = height,
-            flags = flags,
-            spacing = font:GetSpacing(),
-            indent = font:GetIndentedWordWrap()
-        }
-
-        local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
-        self.originalFonts[fontName].colour = { r = textRed, g = textGreen, b = textBlue, a = textAlpha }
-
-        local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
-        local shadowX, shadowY = font:GetShadowOffset()
-        self.originalFonts[fontName].shadow = { colour = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }, offset = { x = shadowX, y = shadowY } }
     end
 end
 
@@ -126,48 +116,32 @@ function Fontmancer:BuildFlags(fontName)
 end
 
 function Fontmancer:ApplySpacing(fontName, font)
-    font:SetSpacing(self.originalFonts[fontName].spacing + self.db.global.offsets.spacing)
+    font:SetSpacing(self.originalFonts[fontName].offsets.spacing + self.db.global.offsets.spacing)
 end
 
-function Fontmancer:ApplyTextColour(fontName, font)
-    local colour = self.db.global.colours.text
-    if self.db.global.enableTextColour then
-        if self.db.global.enableTextAlpha then
-            font:SetTextColor(colour.r, colour.g, colour.b, colour.a)
-        else
-            font:SetTextColor(colour.r, colour.g, colour.b)
-        end
-    else
-        local originalColour = self.originalFonts[fontName].colour
-            if self.db.global.enableTextAlpha then
-                font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
-            else
-            font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
-        end
+function Fontmancer:ApplyTextColour(fontName, font, shouldRevert)
+    local colourSettings = self.db.global.colours.text
+    if shouldRevert then
+        local originalColour = self.originalFonts[fontName].colours.text
+        font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+    elseif colourSettings.isEnabled then
+        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
     end
 end
 
-function Fontmancer:ApplyShadow(fontName, font)
-    -- Colour
-    local colour = self.db.global.colours.shadow
-    if self.db.global.enableShadowColour then
-        if self.db.global.enableShadowAlpha then
-            font:SetShadowColor(colour.r, colour.g, colour.b, colour.a)
-        else
-            font:SetShadowColor(colour.r, colour.g, colour.b)
-        end
-    else
-        local originalColour = self.originalFonts[fontName].shadow.colour
-            if self.db.global.enableShadowAlpha then
-                font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, colour.a)
-            else
-            font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
-        end
+function Fontmancer:ApplyShadowColour(fontName, font, shouldRevert)
+    local colourSettings = self.db.global.colours.shadow
+    if shouldRevert then
+        local originalColour = self.originalFonts[fontName].colours.shadow
+        font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+    elseif colourSettings.isEnabled then
+        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
     end
+end
 
-    -- Offset
-    local newX = self.originalFonts[fontName].shadow.offset.x + self.db.global.offsets.shadow.x
-    local newY = self.originalFonts[fontName].shadow.offset.y + self.db.global.offsets.shadow.y
+function Fontmancer:ApplyShadowOffset(fontName, font)
+    local newX = self.originalFonts[fontName].offsets.shadow.x + self.db.global.offsets.shadow.x
+    local newY = self.originalFonts[fontName].offsets.shadow.y + self.db.global.offsets.shadow.y
     font:SetShadowOffset(newX, newY)
 end
 
