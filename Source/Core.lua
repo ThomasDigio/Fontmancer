@@ -26,7 +26,7 @@ function Fontmancer:OnInitialize()
             excludeNameplates = false,
             offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
             colours = {
-                text = { isEnabled = false, r = 1, g = 247 / 255, b = 140 / 255, a = 1 },
+                text = { isEnabled = false, r = 215 / 255, g = 151 / 255, b = 67 / 255, a = 1 },
                 shadow = { isEnabled = false, r = 0, g = 0, b = 0, a = 1 }
             },
             flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false },

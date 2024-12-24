@@ -8,7 +8,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local Fontmancer = AceAddon:GetAddon(addonName)
 
 Fontmancer.optionOrder = 0
-Fontmancer.colour = "fff78c"
+Fontmancer.colour = "d79743"
 
 function Fontmancer:ShouldReloadForFonts()
     -- Show the warning when we change the font
