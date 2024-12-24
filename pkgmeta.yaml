@@ -8,3 +8,7 @@ externals:
   Libraries/Ace3/AceGUI-SharedMediaWidgets: https://repos.curseforge.com/wow/ace-gui-3-0-shared-media-widgets/trunk/AceGUI-3.0-SharedMediaWidgets
   Libraries/LibSharedMedia: https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
   Libraries/LibStub: https://repos.curseforge.com/wow/libstub/trunk
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
