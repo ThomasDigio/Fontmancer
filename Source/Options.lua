@@ -329,9 +329,9 @@ function Fontmancer:CreateOptionsPanel()
                         order = self:IncrementAndFetchOptionOrder(),
                         type = "description",
                         name =
-                            "• Unchecked means it will leave it as it is\n" ..
-                            "• Checked means it will apply it everywhere\n" ..
-                            "• Greyed out means it will remove it everywhere\n",
+                            "• Unchecked will leave the default value\n" ..
+                            "• Checked will force apply it\n" ..
+                            "• Greyed out will force remove it\n",
                         width = 1.75,
                     },
                     flagNameDescription = {

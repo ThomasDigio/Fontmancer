@@ -39,7 +39,7 @@ function Fontmancer:OnInitialize()
     self:CreateOptionsPanel()
     -- self:CreateAdvancedOptionsPanel()
 
-    -- Change some of the fonts on addon load event otherwise it will not actually apply
+    -- Change the following constants on addon load, otherwise it will not apply
     local eventFrame = CreateFrame("FRAME")
     eventFrame:RegisterEvent("ADDON_LOADED")
     eventFrame:SetScript("OnEvent", function()
