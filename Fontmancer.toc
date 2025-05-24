@@ -5,6 +5,7 @@
 ## Author: Orazur
 ## SavedVariables: FontmancerDB
 ## IconTexture: Interface/AddOns/Fontmancer/Assets/Logo.png
+## Category: User Interface
 
 Libraries/LibStub/LibStub.lua
 Libraries/CallbackHandler/CallbackHandler-1.0.xml
