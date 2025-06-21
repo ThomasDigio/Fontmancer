@@ -1,4 +1,4 @@
-## Interface: 110105
+## Interface: 110107
 ## Version: 1.4.1
 ## Title: |cffee992bF|r|cffe89830o|r|cffe29836n|r|cffdd973ct|r|cffd79743m|r|cffd19547a|r|cffcb954dn|r|cffc69453c|r|cffc09359e|r|cffba925er|r
 ## Notes: Magically apply the same font to your whole UI with a single click!

@@ -1,3 +1,1 @@
-# Changelog
-
-- Improved changelog
+- Updated TOC for 11.1.7
