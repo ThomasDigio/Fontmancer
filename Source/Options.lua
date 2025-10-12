@@ -95,7 +95,7 @@ function Fontmancer:CreateOptionsPanel()
                 end,
                 set = function(_, value)
                     self.db.global.selectedFont = value
-                    self:ApplyReplacements()
+                    self:ReplaceAllFonts()
                 end,
             },
             fontReloadImage = {
@@ -133,7 +133,7 @@ function Fontmancer:CreateOptionsPanel()
                 set = function(_, value)
                     self.previousExcludeNameplates = self.db.global.excludeNameplates
                     self.db.global.excludeNameplates = value
-                    self:ApplyReplacements()
+                    self:ReplaceAllFonts()
                 end,
                 width = 0.9,
             },
@@ -182,7 +182,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.offsets.height = value
-                            self:ApplyReplacements()
+                            self:ReplaceAllFonts()
                         end,
                     },
                     spacingSelector = {
@@ -197,7 +197,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.offsets.spacing = value
-                            self:ApplyReplacements()
+                            self:ReplaceAllFonts()
                         end,
                     },
                     offsetSpacing = self:CreateSpacing(),
@@ -214,7 +214,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.offsets.shadow.x = value
-                            self:ApplyReplacements()
+                            self:ReplaceAllFonts()
                         end,
                     },
                     yShadowSelector = {
@@ -229,7 +229,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, value)
                             self.db.global.offsets.shadow.y = value
-                            self:ApplyReplacements()
+                            self:ReplaceAllFonts()
                         end,
                     },
                 },
@@ -252,9 +252,9 @@ function Fontmancer:CreateOptionsPanel()
                         set = function(_, value)
                             self.db.global.colours.text.isEnabled = value
                             if self.db.global.colours.text.isEnabled then
-                                self:ApplyReplacements()
+                                self:ReplaceAllFonts()
                             else
-                                self:ApplyReplacements(self.ApplyTextColour)
+                                self:ReplaceAllFonts(self.ApplyTextColour)
                             end
                         end,
                     },
@@ -274,7 +274,7 @@ function Fontmancer:CreateOptionsPanel()
                             self.db.global.colours.text.b = b
                             self.db.global.colours.text.a = a
                             if self.db.global.colours.text.isEnabled then
-                                self:ApplyReplacements()
+                                self:ReplaceAllFonts()
                             end
                         end,
                     },
@@ -291,9 +291,9 @@ function Fontmancer:CreateOptionsPanel()
                         set = function(_, value)
                             self.db.global.colours.shadow.isEnabled = value
                             if self.db.global.colours.shadow.isEnabled then
-                                self:ApplyReplacements()
+                                self:ReplaceAllFonts()
                             else
-                                self:ApplyReplacements(self.ApplyShadowColour)
+                                self:ReplaceAllFonts(self.ApplyShadowColour)
                             end
                         end,
                     },
@@ -313,7 +313,7 @@ function Fontmancer:CreateOptionsPanel()
                             self.db.global.colours.shadow.b = b
                             self.db.global.colours.shadow.a = a
                             if self.db.global.colours.shadow.isEnabled then
-                                self:ApplyReplacements()
+                                self:ReplaceAllFonts()
                             end
                         end,
                     },
@@ -354,7 +354,7 @@ function Fontmancer:CreateOptionsPanel()
                         end,
                         set = function(_, name, value)
                             self.db.global.flags[name] = value
-                            self:ApplyReplacements()
+                            self:ReplaceAllFonts()
                         end,
                     },
                     -- indentToggle = {
