@@ -59,36 +59,54 @@ end
 function Fontmancer:OnEnable()
     -- Give it some time to load everything
     C_Timer.After(0.5, function()
-        self:ApplyReplacements()
         self:HookCallbacks()
+        self:ReplaceAllFonts()
     end)
 end
 
-function Fontmancer:ApplyReplacements(revertingFunction)
-    for frameName in pairs(_G) do
-        local frame = _G[frameName]
-        if frame and type(frame) == "table" then
-            local isExcluded = self.db.global.excludeNameplates and string.find(frameName:lower(), "nameplate")
-            local isForbidden = frame.IsForbidden and pcall(frame.IsForbidden, frame) and frame:IsForbidden()
-            local hasFont = frame.GetFont and pcall(frame.GetFont, frame) and frame:GetFont()
-            if not isExcluded and not isForbidden and hasFont then
-                -- Store the original font values so users can reapply height, flags, etc... without needing to reload the UI
-                self:StoreOriginals(frameName, frame)
+function Fontmancer:ReplaceAllFonts(revertingFunction)
+    local fonts = GetFonts()
+    for _, font in ipairs(fonts) do
+        self:ReplaceFont(font, revertingFunction)
+    end
+end
 
-                if revertingFunction then
-                    revertingFunction(self, frameName, frame, true)
-                else
-                    -- Apply all the options
-                    self:ApplyFont(frameName, frame)
-                    self:ApplySpacing(frameName, frame)
-                    self:ApplyTextColour(frameName, frame)
-                    self:ApplyShadowColour(frameName, frame)
-                    self:ApplyShadowOffset(frameName, frame)
-                    -- Except indent, because that is completely broken for some reason
-                    -- self:ApplyIndent(frameName, frame)
-                end
-            end
+function Fontmancer:ReplaceFont(fontName, revertingFunction)
+    local isExcluded = self.db.global.excludeNameplates and string.find(fontName, "nameplate")
+    if not isExcluded then
+        local font = _G[fontName]
+        if revertingFunction then
+            revertingFunction(self, fontName, font, true)
+        else
+            self:StoreOriginals(fontName, font)
+            self:ApplyFont(fontName, font)
+            self:ApplySpacing(fontName, font)
+            self:ApplyTextColour(fontName, font)
+            self:ApplyShadowColour(fontName, font)
+            self:ApplyShadowOffset(fontName, font)
         end
+    end
+end
+
+function Fontmancer:StoreOriginals(fontName, font)
+    if not self.originalFonts[fontName] then
+        local _, height, flags = font:GetFont()
+        local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
+        local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
+        local shadowX, shadowY = font:GetShadowOffset()
+        self.originalFonts[fontName] = {
+            colours = {
+                text = { r = textRed, g = textGreen, b = textBlue, a = textAlpha },
+                shadow = { r = shadowRed, g = shadowGreen, b = shadowBlue, a = shadowAlpha }
+            },
+            flags = flags,
+            height = height,
+            indent = font:GetIndentedWordWrap(),
+            offsets = {
+                shadow = { x = shadowX, y = shadowY },
+                spacing = font:GetSpacing()
+            }
+        }
     end
 end
 
@@ -96,23 +114,21 @@ function Fontmancer:ApplyFont(fontName, font)
     local selectedFont = self.db.global.selectedFont
     if selectedFont then
         local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
-        local newHeight = max(self.originalFonts[fontName].height + self.db.global.offsets.height, 0.5)
-        font:SetFont(fetchedFont, newHeight, self:BuildFlags(fontName))
-    end
-end
+        local newHeight = math.max(self.originalFonts[fontName].height + self.db.global.offsets.height, 0.5)
 
-function Fontmancer:BuildFlags(fontName)
-    local newFlagsSplit = {}
-
-    for flagName, flagState in pairs(self.db.global.flags) do
-        -- Apply the flag if the box is checked, or unchecked but in the original values
-        -- If greyed out, don't add it
-        if flagState or (flagState == false and string.find(self.originalFonts[fontName].flags, flagName)) then
-            table.insert(newFlagsSplit, flagName)
+        local newFlagsSplit = {}
+        for flagName, flagState in pairs(self.db.global.flags) do
+            -- Apply the flag if the box is checked, or unchecked but in the original values
+            -- If greyed out, don't add it
+            if flagState or (flagState == false and string.find(self.originalFonts[fontName].flags, flagName)) then
+                table.insert(newFlagsSplit, flagName)
+            end
         end
-    end
+        local newFlags = table.concat(newFlagsSplit, ", ")
 
-    return table.concat(newFlagsSplit, ", ")
+
+        font:SetFont(fetchedFont, newHeight, newFlags, true)
+    end
 end
 
 function Fontmancer:ApplySpacing(fontName, font)

@@ -1,1 +1,3 @@
-- Updated TOC for 11.1.7
+- Updated TOC for 11.2.5
+- Reworked font replacement logic: should now be much more efficient & fix some interactions with other addons
+- If you had any issue with nameplates in the past, please try disabling the 'Exclude Nameplates' option again and let me know if does or doesn't work for you!
