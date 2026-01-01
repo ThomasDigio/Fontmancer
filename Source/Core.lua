@@ -57,10 +57,10 @@ function Fontmancer:OnInitialize()
 end
 
 function Fontmancer:OnEnable()
-    -- Give it some time to load everything
+    -- Give it some time to avoid loading at the same time as the rest of the UI
     C_Timer.After(0.5, function()
-        self:HookCallbacks()
         self:ReplaceAllFonts()
+        self:HookCallbacks()
     end)
 end
 
@@ -158,10 +158,10 @@ end
 function Fontmancer:ApplyShadowOffset(fontName, font)
     local newX = self.originalFonts[fontName].offsets.shadow.x + self.db.global.offsets.shadow.x
     local newY = self.originalFonts[fontName].offsets.shadow.y + self.db.global.offsets.shadow.y
-    font:SetShadowOffset(newX, newY)
+    font:SetShadowOffset(newX, newY, true)
 end
 
 function Fontmancer:ApplyIndent(fontName, font)
     local indent = self.db.global.forceIndent
-    font:SetIndentedWordWrap(indent or (indent == false and self.originalFonts[fontName].indent))
+    font:SetIndentedWordWrap(indent or (indent == false and self.originalFonts[fontName].indent), true)
 end
