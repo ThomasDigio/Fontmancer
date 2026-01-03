@@ -1,3 +1,3 @@
-- Updated TOC for 11.2.5
-- Reworked font replacement logic: should now be much more efficient & fix some interactions with other addons
-- If you had any issue with nameplates in the past, please try disabling the 'Exclude Nameplates' option again and let me know if does or doesn't work for you!
+- Added Classic & MoP Classic as supported versions. I do not regularly play these so let me know if there is any issues!
+- Improved tracking of original values to revert to when disabling features
+- Fixed bugs

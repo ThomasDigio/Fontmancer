@@ -57,10 +57,10 @@ function Fontmancer:OnInitialize()
 end
 
 function Fontmancer:OnEnable()
-    -- Give it some time to load everything
+    -- Give it some time to avoid loading at the same time as the rest of the UI
     C_Timer.After(0.5, function()
-        self:HookCallbacks()
         self:ReplaceAllFonts()
+        self:HookCallbacks()
     end)
 end
 
@@ -126,42 +126,53 @@ function Fontmancer:ApplyFont(fontName, font)
         end
         local newFlags = table.concat(newFlagsSplit, ", ")
 
-
-        font:SetFont(fetchedFont, newHeight, newFlags, true)
+        self.isUpdating = true
+        font:SetFont(fetchedFont, newHeight, newFlags)
+        self.isUpdating = false
     end
 end
 
 function Fontmancer:ApplySpacing(fontName, font)
+    self.isUpdating = true
     font:SetSpacing(self.originalFonts[fontName].offsets.spacing + self.db.global.offsets.spacing)
+    self.isUpdating = false
 end
 
 function Fontmancer:ApplyTextColour(fontName, font, shouldRevert)
     local colourSettings = self.db.global.colours.text
+    self.isUpdating = true
     if shouldRevert then
         local originalColour = self.originalFonts[fontName].colours.text
-        font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+        font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif colourSettings.isEnabled then
-        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
+        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
     end
+    self.isUpdating = false
 end
 
 function Fontmancer:ApplyShadowColour(fontName, font, shouldRevert)
     local colourSettings = self.db.global.colours.shadow
+    self.isUpdating = true
     if shouldRevert then
         local originalColour = self.originalFonts[fontName].colours.shadow
-        font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a, true)
+        font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif colourSettings.isEnabled then
-        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a, true)
+        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
     end
+    self.isUpdating = false
 end
 
 function Fontmancer:ApplyShadowOffset(fontName, font)
     local newX = self.originalFonts[fontName].offsets.shadow.x + self.db.global.offsets.shadow.x
     local newY = self.originalFonts[fontName].offsets.shadow.y + self.db.global.offsets.shadow.y
+    self.isUpdating = true
     font:SetShadowOffset(newX, newY)
+    self.isUpdating = false
 end
 
 function Fontmancer:ApplyIndent(fontName, font)
     local indent = self.db.global.forceIndent
+    self.isUpdating = true
     font:SetIndentedWordWrap(indent or (indent == false and self.originalFonts[fontName].indent))
+    self.isUpdating = false
 end
