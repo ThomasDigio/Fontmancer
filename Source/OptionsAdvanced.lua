@@ -6,99 +6,71 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 ---@class Fontmancer: AceAddon
 local Fontmancer = AceAddon:GetAddon(addonName)
 
--- Sample data table - replace with your own data
-Fontmancer.listData = {
-    {
-        name = "First Item",
-        type = "Weapon",
-        value = "1000g"
-    },
-    {
-        name = "Second Item",
-        type = "Armor",
-        value = "500g"
-    },
-    {
-        name = "Third Item",
-        type = "Consumable",
-        value = "50g"
-    }
-}
 Fontmancer.tableValues = {}
 Fontmancer.searchText = ""
 
--- Function to update the list based on search
 function Fontmancer:UpdateList()
-    self.tableValues = {}
     local order = 1
 
-    for _, item in pairs(self.listData) do
+    local searchPattern = self.searchText
+    if searchPattern ~= "" then
+        searchPattern = C_StringUtil.EscapeLuaPatterns(searchPattern)
+    end
+
+    local sortedFonts = {}
+    for fontName in pairs(self.originalFonts) do
+        table.insert(sortedFonts, fontName)
+    end
+    table.sort(sortedFonts)
+
+    for _, fontName in ipairs(sortedFonts) do
         -- Check if item matches search
-        if self.searchText == "" or item.name:lower():find(self.searchText) then
-            self.tableValues[item.name] = {
-                type = "group",
-                name = "", -- Empty name for better spacing
-                inline = true,
+        if self.searchText == "" or fontName:lower():find(searchPattern) then
+            self.tableValues["item" .. order] = {
+                type = "description",
+                name = fontName,
+                width = 'full',
+                fontSize = "medium",
                 order = order,
-                args = {
-                    name = {
-                        type = "description",
-                        name = item.name,
-                        width = 1.3,
-                        fontSize = "medium",
-                        order = 1,
-                    },
-                    type = {
-                        type = "description",
-                        name = item.type,
-                        width = 1.3,
-                        fontSize = "medium",
-                        order = 2,
-                    },
-                    value = {
-                        type = "description",
-                        name = item.value,
-                        width = 1.3,
-                        fontSize = "medium",
-                        order = 3,
-                    },
-                }
             }
             order = order + 1
         end
     end
 
-    -- Notify configuration system of the changes
+    -- Update the UI with the new list entries
     AceConfigRegistry:NotifyChange(addonName)
 end
 
 function Fontmancer:CreateAdvancedOptionsPanel()
+    self:InitialiseInspector()
+    self:UpdateList()
+
     local options = {
         name = self.metadata.TITLE,
         handler = Fontmancer,
         type = "group",
         args = {
-            -- inspectorHeader = {
-            --     order = self:IncrementAndFetchOptionOrder(),
-            --     type = "header",
-            --     name = "Inspector",
-            -- },
-            -- inspectorHeaderSpacing = self:CreateSpacing(),
-            -- inspectorDescription = {
-            --     order = self:IncrementAndFetchOptionOrder(),
-            --     type = "description",
-            --     name = "Looking for a specific frame's text, but not sure which one? Use the inspector!",
-            -- },
-            -- inspectorToggle = {
-            --     order = self:IncrementAndFetchOptionOrder(),
-            --     type = "execute",
-            --     name = "Toggle Inspector",
-            --     func = function()
-            --         HideUIPanel(SettingsPanel)
-            --         HideUIPanel(GameMenuFrame)
-            --         self:ToggleInspection()
-            --     end,
-            -- },
+            inspectorHeader = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "header",
+                name = "Inspector",
+            },
+            inspectorHeaderSpacing = self:CreateSpacing(),
+            inspectorDescription = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "description",
+                name = "Looking for a specific frame's text, but not sure which one? Use the inspector!",
+            },
+            inspectorToggle = {
+                order = self:IncrementAndFetchOptionOrder(),
+                type = "execute",
+                name = "Toggle Inspector",
+                func = function()
+                    HideUIPanel(SettingsPanel)
+                    HideUIPanel(GameMenuFrame)
+                    self:ToggleInspection()
+                end,
+            },
             listingHeader = {
                 order = self:IncrementAndFetchOptionOrder(),
                 type = "header",
@@ -119,7 +91,6 @@ function Fontmancer:CreateAdvancedOptionsPanel()
                 set = function(_, value)
                     self.searchText = value:lower()
                 end,
-                -- width = 1,
             },
             fontListRefresh = {
                 order = self:IncrementAndFetchOptionOrder(),

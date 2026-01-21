@@ -52,8 +52,6 @@ function Fontmancer:OnInitialize()
             NAMEPLATE_FONT = fetchedFont
         end
     end)
-
-    -- self:InitialiseInspector()
 end
 
 function Fontmancer:OnEnable()

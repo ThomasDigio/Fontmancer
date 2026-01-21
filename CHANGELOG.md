@@ -1,3 +1,1 @@
-- Added Classic & MoP Classic as supported versions. I do not regularly play these so let me know if there is any issues!
-- Improved tracking of original values to revert to when disabling features
-- Fixed bugs
+- Updated for Midnight
