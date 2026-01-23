@@ -1,16 +1,12 @@
-local addonName = ...
-local AceAddon = LibStub("AceAddon-3.0")
+local addonName, addonTable = ...
 
----@class Fontmancer: AceAddon
-local Fontmancer = AceAddon:GetAddon(addonName)
+addonTable.isInspecting = false
+addonTable.inspectorWindowBackground = nil
+addonTable.inspectorWindow = nil
+addonTable.inspectorTooltip = nil
+addonTable.tooltipUpdater = nil
 
-Fontmancer.isInspecting = false
-Fontmancer.inspectorWindowBackground = nil
-Fontmancer.inspectorWindow = nil
-Fontmancer.inspectorTooltip = nil
-Fontmancer.tooltipUpdater = nil
-
-function Fontmancer:InitialiseInspector()
+function addonTable:InitialiseInspector()
     -- Create the window to exit inspection mode
     self.inspectorWindowBackground = CreateFrame("Frame", "FontmancerInspectorBackground")
     self.inspectorWindowBackground:SetSize(300, 125)
@@ -49,7 +45,7 @@ function Fontmancer:InitialiseInspector()
     self.inspectorTooltip = CreateFrame("GameTooltip", "FontmancerInspectorTooltip", UIParent, "GameTooltipTemplate")
 end
 
-function Fontmancer:ConcatenateFontTables(firstTable, secondTable)
+function addonTable:ConcatenateFontTables(firstTable, secondTable)
     for _, value in pairs(secondTable) do
         table.insert(firstTable, value)
     end
@@ -57,7 +53,7 @@ function Fontmancer:ConcatenateFontTables(firstTable, secondTable)
     return firstTable
 end
 
-function Fontmancer:GetInspectedFonts(frame)
+function addonTable:GetInspectedFonts(frame)
     local fontStrings = {}
 
     -- Check if the object itself is a font string
@@ -90,7 +86,7 @@ function Fontmancer:GetInspectedFonts(frame)
     return fontStrings
 end
 
-function Fontmancer:ClearTooltip()
+function addonTable:ClearTooltip()
     self.inspectorTooltip:Hide()
     self.inspectorTooltip:ClearLines()
 
@@ -99,7 +95,7 @@ function Fontmancer:ClearTooltip()
     self.inspectorTooltip:SetPoint("TOPLEFT", self.inspectorWindow, "TOPRIGHT", 0, 0)
 end
 
-function Fontmancer:GetFocusedFrames()
+function addonTable:GetFocusedFrames()
     local focusedFrames = {}
     local frame = EnumerateFrames()
     while frame do
@@ -114,14 +110,14 @@ function Fontmancer:GetFocusedFrames()
     return focusedFrames
 end
 
-function Fontmancer:PopulateTooltip()
+function addonTable:PopulateTooltip()
     if not self.isInspecting then
         return
     end
 
     self:ClearTooltip()
 
-    local headerColour = self.databaseDefaults.global.colours.text
+    local headerColour = self.databaseDefaults.colours.text
     for _, focusedFrame in pairs(self:GetFocusedFrames()) do
         if focusedFrame ~= WorldFrame and focusedFrame ~= UIParent then
             self.inspectorTooltip:AddLine(focusedFrame:GetDebugName(), headerColour.r,
@@ -142,7 +138,7 @@ function Fontmancer:PopulateTooltip()
     self.inspectorTooltip:Show()
 end
 
-function Fontmancer:ToggleInspection()
+function addonTable:ToggleInspection()
     self.isInspecting = not self.isInspecting
 
     if self.isInspecting then
