@@ -1,1 +1,1 @@
-- Fixed texts needing a full logout not having their font changed
+- Disabled experimental 'Advanced' options panel

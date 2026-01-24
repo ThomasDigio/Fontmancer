@@ -81,8 +81,8 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         addonTable:HookCallbacks()
 
         addonTable:CreateOptionsPanel()
-        addonTable:CreateAdvancedOptionsPanel()
-        addonTable:InitialiseInspector()
+        -- addonTable:CreateAdvancedOptionsPanel()
+        -- addonTable:InitialiseInspector()
     end
 end)
 
