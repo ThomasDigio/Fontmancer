@@ -7,9 +7,8 @@ function addonTable:CreateSectionHeader(parent, text, relativeTo)
     headerFrame:SetPoint("LEFT", parent, "LEFT", 10, 0)
     headerFrame:SetPoint("RIGHT", parent, "RIGHT", -10, 0)
 
-    local headerText = headerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    local headerText = headerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     headerText:SetText(text)
-    headerText:SetTextColor(1, 0.82, 0)
     headerText:SetPoint("CENTER")
 
     local leftLine = headerFrame:CreateTexture(nil, "ARTWORK")
@@ -88,9 +87,9 @@ function addonTable:CreateTriStateCheck(label, key, descriptionFrame, descriptio
     return button
 end
 
-function addonTable:CreateSlider(name, text, minVal, maxVal, step, dbTable, dbKey, relativeTo, xOff, yOff)
+function addonTable:CreateSlider(name, text, minVal, maxVal, step, dbTable, dbKey, relativeTo, xOffset, yOffset)
     local slider = CreateFrame("Slider", addonName .. name .. "Slider", self.scrollContent, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOff, yOff)
+    slider:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
     slider:SetMinMaxValues(minVal, maxVal)
     slider:SetValueStep(step)
     slider:SetObeyStepOnDrag(true)
@@ -108,10 +107,10 @@ function addonTable:CreateSlider(name, text, minVal, maxVal, step, dbTable, dbKe
     return slider
 end
 
-function addonTable:CreateColourPicker(label, dbTable, relativeTo, xOff, yOff, callbackFunc)
+function addonTable:CreateColourPicker(label, dbTable, relativeTo, xOffset, yOffset, callbackFunc)
     local frame = CreateFrame("Frame", nil, self.scrollContent)
     frame:SetSize(200, 30)
-    frame:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOff, yOff)
+    frame:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
 
     local check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
     check:SetPoint("LEFT", 0, 0)

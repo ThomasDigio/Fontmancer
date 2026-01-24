@@ -53,8 +53,9 @@ function addonTable:CreateOptionsPanel()
                     addonTable:ReplaceAllFonts()
                     UpdateReloadWarning()
                 end)
+            -- We create a custom dropdown where each font option is rendered in its own style
             radio:AddInitializer(function(button)
-                -- We have to create our own custom FontString because we're not allowed to modify the default one
+                -- For that, we have to create our own custom FontString because we're not allowed to modify the default one
                 if not button.customFontLayer then
                     local overlay = CreateFrame("Frame", nil, button)
                     overlay:SetAllPoints(button)
@@ -73,7 +74,6 @@ function addonTable:CreateOptionsPanel()
                     end)
                 end
 
-                -- Render the font text in its own style
                 local fs = button.customFontLayer.fs
                 local fontPath = LSM:Fetch(LSM.MediaType.FONT, fontName)
                 if fontPath then
@@ -117,38 +117,38 @@ function addonTable:CreateOptionsPanel()
     nameplateCheck:SetPoint("TOPLEFT", fontDropDown, "BOTTOMLEFT", 0, -10)
     nameplateCheck.text:SetText("Exclude Nameplates")
     nameplateCheck:SetChecked(addonTable.db.excludeNameplates)
-    local reloadBtn = CreateFrame("Button", nil, self.scrollContent)
-    reloadBtn:SetSize(15, 15)
-    reloadBtn:SetPoint("LEFT", nameplateCheck.text, "RIGHT", 10, 0)
-    reloadBtn:SetNormalAtlas("UI-RefreshButton")
-    reloadBtn:SetScript("OnClick", C_UI.Reload)
-    reloadBtn:SetAlpha(0)
-    local tex = reloadBtn:GetNormalTexture()
-    local animIn = tex:CreateAnimationGroup()
+    local reloadButton = CreateFrame("Button", nil, self.scrollContent)
+    reloadButton:SetSize(15, 15)
+    reloadButton:SetPoint("LEFT", nameplateCheck.text, "RIGHT", 10, 0)
+    reloadButton:SetNormalAtlas("UI-RefreshButton")
+    reloadButton:SetScript("OnClick", C_UI.Reload)
+    reloadButton:SetAlpha(0)
+    local buttonTexture = reloadButton:GetNormalTexture()
+    local animIn = buttonTexture:CreateAnimationGroup()
     local rotateIn = animIn:CreateAnimation("Rotation")
     rotateIn:SetDegrees(-25)
     rotateIn:SetDuration(0.2)
-    animIn:SetScript("OnFinished", function() tex:SetRotation(math.rad(-25)) end)
-    local animOut = tex:CreateAnimationGroup()
+    animIn:SetScript("OnFinished", function() buttonTexture:SetRotation(math.rad(-25)) end)
+    local animOut = buttonTexture:CreateAnimationGroup()
     local rotateOut = animOut:CreateAnimation("Rotation")
     rotateOut:SetDegrees(25)
     rotateOut:SetDuration(0.2)
-    animOut:SetScript("OnFinished", function() tex:SetRotation(0) end)
-    reloadBtn:SetScript("OnEnter", function()
+    animOut:SetScript("OnFinished", function() buttonTexture:SetRotation(0) end)
+    reloadButton:SetScript("OnEnter", function()
         animIn:Play()
     end)
-    reloadBtn:SetScript("OnLeave", function()
+    reloadButton:SetScript("OnLeave", function()
         if animIn:IsPlaying() then
             animIn:Stop()
-            tex:SetRotation(0)
+            buttonTexture:SetRotation(0)
         else
-            tex:SetRotation(math.rad(-25))
+            buttonTexture:SetRotation(math.rad(-25))
             animOut:Play()
         end
     end)
     local reloadWarning = self.scrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     reloadWarning:SetText("|cffff9900You will need to reload your UI for that option to take effect!|r")
-    reloadWarning:SetPoint("LEFT", reloadBtn, "RIGHT", 5, 0)
+    reloadWarning:SetPoint("LEFT", reloadButton, "RIGHT", 5, 0)
     -- Manually set the color on this specific string to block SetTextColor from updating the alpha, ensuring the text stays hidden
     -- Not fully sure I understand how that works but it works
     reloadWarning:SetTextColor(1, 1, 1, 1)
@@ -157,11 +157,11 @@ function addonTable:CreateOptionsPanel()
         -- Show the warning when we toggle the checkbox on
         local shouldShow = addonTable.db.excludeNameplates and not addonTable.initialExcludeNameplates
         if shouldShow then
-            UIFrameFadeIn(reloadBtn, 0.25, reloadBtn:GetAlpha(), 1)
-            UIFrameFadeIn(reloadWarning, 0.25, reloadWarning:GetAlpha(), 1)
+            UIFrameFadeIn(reloadButton, 0.2, reloadButton:GetAlpha(), 1)
+            UIFrameFadeIn(reloadWarning, 0.2, reloadWarning:GetAlpha(), 1)
         else
-            UIFrameFadeOut(reloadBtn, 0.25, reloadBtn:GetAlpha(), 0)
-            UIFrameFadeOut(reloadWarning, 0.25, reloadWarning:GetAlpha(), 0)
+            UIFrameFadeOut(reloadButton, 0.2, reloadButton:GetAlpha(), 0)
+            UIFrameFadeOut(reloadWarning, 0.2, reloadWarning:GetAlpha(), 0)
         end
     end
     nameplateCheck:SetScript("OnClick", function(self)
@@ -186,7 +186,7 @@ function addonTable:CreateOptionsPanel()
     local monoCheck = self:CreateTriStateCheck("Monochrome", "MONOCHROME", flagsDescription,
         "Renders the font without antialiasing",
         flagRowAnchor,
-        60, true)
+        70, true)
     local outlineCheck = self:CreateTriStateCheck("Outline", "OUTLINE", flagsDescription,
         "Renders the font with a black outline",
         monoCheck,
@@ -196,20 +196,20 @@ function addonTable:CreateOptionsPanel()
         outlineCheck, 100)
 
     local offsetHeader = self:CreateSectionHeader(self.scrollContent, "Offsets", flagsDescription)
-    local sizeSlider = self:CreateSlider("Size", "Size Modifier", -10, 10, 0.5, addonTable.db.offsets, "height",
+    local sizeSlider = self:CreateSlider("Size", "Size", -10, 10, 0.5, addonTable.db.offsets, "height",
         offsetHeader,
-        20, -30)
-    local spaceSlider = self:CreateSlider("Space", "Spacing Modifier", -10, 10, 0.5, addonTable.db.offsets, "spacing",
+        100, -30)
+    local spaceSlider = self:CreateSlider("Spacing", "Spacing", -10, 10, 0.5, addonTable.db.offsets, "spacing",
         sizeSlider, 0, -40)
     local shadowXSlider = self:CreateSlider("ShadowX", "Shadow X", -10, 10, 0.5, addonTable.db.offsets.shadow, "x",
-        offsetHeader, 250, -30)
+        offsetHeader, 330, -30)
     self:CreateSlider("ShadowY", "Shadow Y", -10, 10, 0.5, addonTable.db.offsets.shadow, "y",
         shadowXSlider, 0, -40)
 
     local colourHeader = self:CreateSectionHeader(self.scrollContent, "Colours", spaceSlider)
-    self:CreateColourPicker("text", addonTable.db.colours.text, colourHeader, 20, -20,
+    self:CreateColourPicker("text", addonTable.db.colours.text, colourHeader, 100, -20,
         addonTable.ApplyTextColour)
-    self:CreateColourPicker("shadow", addonTable.db.colours.shadow, colourHeader, 250, -20,
+    self:CreateColourPicker("shadow", addonTable.db.colours.shadow, colourHeader, 330, -20,
         addonTable.ApplyShadowColour)
 
     -- Register with Blizzard settings

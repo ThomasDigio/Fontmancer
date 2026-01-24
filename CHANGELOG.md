@@ -1,4 +1,5 @@
 - Made the options UI a bit fancier
 - Fixed an error that could occurr when editing text properties (like font, colour...) in other addons
 - Fixed offsets being applied twice
+- Fixed nameplates sometimes being modified even when excluded
 - Greatly reduced the amount of library dependencies. We don't need'em!
