@@ -1,5 +1,8 @@
 local addonName, addonTable = ...
 
+-- Callbacks are here to:
+-- 1. Handle fonts added after the initial run
+-- 2. Handle updates to already processed fonts; we don't want said updates to override our customisation
 function addonTable:HookCallbacks()
     local fontMeta = getmetatable(CreateFont("FontmancerHookFont")).__index
 
@@ -7,7 +10,7 @@ function addonTable:HookCallbacks()
         hooksecurefunc(fontMeta, method, function(fontInstance, ...)
             local fontName = fontInstance:GetName()
             if not fontName or self.isUpdating then return end
-            self:StoreOriginals(fontName, fontInstance)
+            if not self.originalFonts[fontName] then self:StoreOriginals(fontName, fontInstance) end
             handler(fontName, fontInstance, ...)
         end)
     end

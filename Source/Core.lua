@@ -21,10 +21,21 @@ addonTable.databaseDefaults = {
     forceIndent = false,
 }
 
+local areConstantsApplied = false
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
+    -- Change the following constants ASAP, otherwise it will not apply
+    if not areConstantsApplied and FontmancerDB and FontmancerDB.global and FontmancerDB.global.selectedFont then
+        local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, FontmancerDB.global.selectedFont)
+        DAMAGE_TEXT_FONT = fetchedFont
+        UNIT_NAME_FONT = fetchedFont
+        STANDARD_TEXT_FONT = fetchedFont
+        NAMEPLATE_FONT = fetchedFont
+        areConstantsApplied = true
+    end
+
     if event == "ADDON_LOADED" and arg1 == addonName then
         -- Initialise from defaults if missing
         FontmancerDB = FontmancerDB or {}
@@ -66,23 +77,9 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         end
         addonTable.initiallySelectedFont = addonTable.db.selectedFont
         addonTable.initialExcludeNameplates = addonTable.db.excludeNameplates
-
-        -- Change the following constants on addon load, otherwise it will not apply
-        local selectedFont = addonTable.db.selectedFont
-        if selectedFont then
-            local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
-            if fetchedFont then
-                DAMAGE_TEXT_FONT = fetchedFont
-                UNIT_NAME_FONT = fetchedFont
-                STANDARD_TEXT_FONT = fetchedFont
-                NAMEPLATE_FONT = fetchedFont
-            end
-        end
     elseif event == "PLAYER_LOGIN" then
-        C_Timer.After(0.5, function()
-            addonTable:ReplaceAllFonts()
-            addonTable:HookCallbacks()
-        end)
+        addonTable:ReplaceAllFonts()
+        addonTable:HookCallbacks()
 
         addonTable:CreateOptionsPanel()
         addonTable:CreateAdvancedOptionsPanel()
