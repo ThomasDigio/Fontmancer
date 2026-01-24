@@ -21,19 +21,18 @@ addonTable.databaseDefaults = {
     forceIndent = false,
 }
 
-local areConstantsApplied = false
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     -- Change the following constants ASAP, otherwise it will not apply
-    if not areConstantsApplied and FontmancerDB and FontmancerDB.global and FontmancerDB.global.selectedFont then
+    -- TODO Applying once on first load event does not work, figure out how to optimise
+    if FontmancerDB and FontmancerDB.global and FontmancerDB.global.selectedFont then
         local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, FontmancerDB.global.selectedFont)
         DAMAGE_TEXT_FONT = fetchedFont
         UNIT_NAME_FONT = fetchedFont
         STANDARD_TEXT_FONT = fetchedFont
         NAMEPLATE_FONT = fetchedFont
-        areConstantsApplied = true
     end
 
     if event == "ADDON_LOADED" and arg1 == addonName then
