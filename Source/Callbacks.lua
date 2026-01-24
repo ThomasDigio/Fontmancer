@@ -28,8 +28,7 @@ function addonTable:HookCallbacks()
             r = r,
             g = g,
             b = b,
-            a = a or self.originalFonts[name].colours.text.a or
-                1
+            a = a or self.originalFonts[name].colours.text.a or 1
         }
         self:ApplyTextColour(name, font)
     end)
@@ -39,8 +38,7 @@ function addonTable:HookCallbacks()
             r = r,
             g = g,
             b = b,
-            a = a or
-                self.originalFonts[name].colours.shadow.a or 1
+            a = a or self.originalFonts[name].colours.shadow.a or 1
         }
         self:ApplyShadowColour(name, font)
     end)

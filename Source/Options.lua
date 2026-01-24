@@ -149,6 +149,9 @@ function addonTable:CreateOptionsPanel()
     local reloadWarning = self.scrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     reloadWarning:SetText("|cffff9900You will need to reload your UI for that option to take effect!|r")
     reloadWarning:SetPoint("LEFT", reloadBtn, "RIGHT", 5, 0)
+    -- Manually set the color on this specific string to block SetTextColor from updating the alpha, ensuring the text stays hidden
+    -- Not fully sure I understand how that works but it works
+    reloadWarning:SetTextColor(1, 1, 1, 1)
     reloadWarning:SetAlpha(0)
     local function UpdateNameplateReload()
         -- Show the warning when we toggle the checkbox on
@@ -176,8 +179,9 @@ function addonTable:CreateOptionsPanel()
     local flagsDescription = self.scrollContent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     flagsDescription:SetPoint("TOP", flagRowAnchor, "BOTTOM", 0, -50)
     flagsDescription:SetSize(500, 40)
-    flagsDescription:SetJustifyH("CENTER")
-    flagsDescription:SetJustifyV("TOP")
+    -- Manually set the color on this specific string to block SetTextColor from updating the alpha, ensuring the text stays hidden
+    -- Not fully sure I understand how that works but it works
+    flagsDescription:SetTextColor(1, 1, 1, 1)
     flagsDescription:SetAlpha(0)
     local monoCheck = self:CreateTriStateCheck("Monochrome", "MONOCHROME", flagsDescription,
         "Renders the font without antialiasing",

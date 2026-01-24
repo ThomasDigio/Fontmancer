@@ -34,10 +34,8 @@ function addonTable:CreateTriStateCheck(label, key, descriptionFrame, descriptio
     else
         button:SetPoint("LEFT", relativeTo, "RIGHT", xOffset, 0)
     end
-
     button.text:SetText(label)
     button.text:SetFontObject("GameFontNormalLarge")
-    button.text:SetTextColor(1, 0.82, 0)
 
     local function UpdateVisuals()
         local state = addonTable.db.flags[key]

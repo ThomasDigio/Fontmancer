@@ -54,7 +54,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
                 end
             end
         end
-        CopyDefaults(defaultSettings, addonTable.db)
+        CopyDefaults(addonTable.databaseDefaults, addonTable.db)
         if addonTable.db.flags == nil then
             -- false = Default, true = Force On, nil = Force Off
             addonTable.db.flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false }
@@ -182,7 +182,10 @@ function addonTable:ApplyTextColour(fontName, font, shouldRevert)
         local originalColour = self.originalFonts[fontName].colours.text
         font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif colourSettings.isEnabled then
-        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+        -- Use alpha as a cap instead of a direct override to prevent hidden text from becoming visible
+        local originalAlpha = self.originalFonts[fontName].colours.text.a or 1
+        local finalAlpha = math.min(colourSettings.a, originalAlpha)
+        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
     end
     self.isUpdating = false
 end
@@ -195,7 +198,10 @@ function addonTable:ApplyShadowColour(fontName, font, shouldRevert)
         local originalColour = self.originalFonts[fontName].colours.shadow
         font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif colourSettings.isEnabled then
-        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+        -- Use alpha as a cap instead of a direct override to prevent hidden text from becoming visible
+        local originalAlpha = self.originalFonts[fontName].colours.shadow.a or 1
+        local finalAlpha = math.min(colourSettings.a, originalAlpha)
+        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
     end
     self.isUpdating = false
 end
