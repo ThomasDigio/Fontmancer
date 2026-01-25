@@ -1,1 +1,1 @@
-- Disabled experimental 'Advanced' options panel
+- Added new 'Advanced' options panel for a more granular control for people who want it
