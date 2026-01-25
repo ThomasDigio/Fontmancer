@@ -1,1 +1,1 @@
-- Added new 'Advanced' options panel for a more granular control for people who want it
+- Added new 'Advanced' options panel for a more granular control for people who want it. Please open an issue on Github for any feedback you have, even if not directly a bug!

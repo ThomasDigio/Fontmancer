@@ -11,9 +11,10 @@ Libraries/LibStub/LibStub.lua
 Libraries/CallbackHandler/CallbackHandler-1.0.xml
 Libraries/LibSharedMedia/lib.xml
 
-Source/Core.lua
 Source/Callbacks.lua
+Source/Core.lua
 Source/Inspector.lua
 Source/Options.lua
 Source/OptionsAdvanced.lua
 Source/OptionsTemplates.lua
+Source/Tooltip.lua
