@@ -22,7 +22,6 @@ function addonTable:CreateAdvancedOptionsPanel()
         if addonTable.ToggleInspection then
             addonTable:ToggleInspection()
             if SettingsPanel and SettingsPanel:IsShown() then HideUIPanel(SettingsPanel) end
-            if InterfaceOptionsFrame:IsShown() then HideUIPanel(InterfaceOptionsFrame) end
         end
     end)
 

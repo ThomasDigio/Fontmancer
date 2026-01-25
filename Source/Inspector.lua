@@ -68,18 +68,10 @@ function addonTable:GetInspectedFonts(frame)
     end
 
     -- Check if the object's regions is/has a font string
-    local hasPossiblyRegions, regions = pcall(function() return frame:GetRegions() end)
+    local hasPossiblyRegions, regions = pcall(function() return { frame:GetRegions() } end)
     if hasPossiblyRegions then
-        for _, region in pairs({ regions }) do
+        for _, region in pairs(regions) do
             fontStrings = self:ConcatenateFontTables(fontStrings, self:GetInspectedFonts(region))
-        end
-    end
-
-    -- Check if the object's children is/has a font string
-    local hasPossiblyChildren, children = pcall(function() return frame:GetChildren() end)
-    if hasPossiblyChildren then
-        for _, child in pairs({ children }) do
-            fontStrings = self:ConcatenateFontTables(fontStrings, self:GetInspectedFonts(child))
         end
     end
 
@@ -97,40 +89,71 @@ end
 
 function addonTable:GetFocusedFrames()
     local focusedFrames = {}
+
+    -- Standard UI frames, can't use GetMouseFoci as that ignores non-interactive stuff
     local frame = EnumerateFrames()
     while frame do
-        local isPossiblyShown, isShown = pcall(function() return frame:IsShown() end)
-        local isPossiblyVisible, isVisible = pcall(function() return frame:IsVisible() end)
-        local isPossiblyHovered, isHovered = pcall(function() return frame:IsMouseOver() end)
-        if isPossiblyShown and isShown and isPossiblyVisible and isVisible and isPossiblyHovered and isHovered then
-            table.insert(focusedFrames, frame)
+        if not frame:IsForbidden() then
+            local isPossiblyVisible, isVisible = pcall(function() return frame:IsVisible() end)
+            if isPossiblyVisible and isVisible then
+                local isPossiblyHovered, isHovered = pcall(function() return frame:IsMouseOver() end)
+                if isPossiblyHovered and isHovered then
+                    table.insert(focusedFrames, frame)
+                end
+            end
         end
         frame = EnumerateFrames(frame)
     end
+
+    -- Nameplates
+    local function TryAddFrame(frame)
+        if not frame:IsForbidden() then
+            table.insert(focusedFrames, frame)
+        end
+    end
+
+    if C_NamePlate and C_NamePlate.GetNamePlateForUnit then
+        local nameplate = C_NamePlate.GetNamePlateForUnit("mouseover")
+        if nameplate then
+            TryAddFrame(nameplate)
+            TryAddFrame(nameplate.UnitFrame)
+        end
+    end
+
     return focusedFrames
 end
 
 function addonTable:PopulateTooltip()
-    if not self.isInspecting then
-        return
-    end
-
     self:ClearTooltip()
 
-    local headerColour = self.databaseDefaults.colours.text
-    for _, focusedFrame in pairs(self:GetFocusedFrames()) do
-        if focusedFrame ~= WorldFrame and focusedFrame ~= UIParent then
-            self.inspectorTooltip:AddLine(focusedFrame:GetDebugName(), headerColour.r,
-                headerColour.g, headerColour.b)
+    local frames = self:GetFocusedFrames()
 
-            local fonts = self:GetInspectedFonts(focusedFrame)
-            if #fonts > 0 then
-                self.inspectorTooltip:AddLine(" Has text:")
-                for _, fontString in pairs(fonts) do
-                    self.inspectorTooltip:AddLine("  " .. fontString:GetDebugName())
+    -- Sort by visual stacking order
+    table.sort(frames, function(a, b)
+        return (a:GetFrameLevel() or 0) > (b:GetFrameLevel() or 0)
+    end)
+
+    for _, focusedFrame in pairs(frames) do
+        if focusedFrame ~= WorldFrame and focusedFrame ~= UIParent then
+            local fontStrings = self:GetInspectedFonts(focusedFrame)
+
+            if #fontStrings > 0 then
+                local headerColour = self.databaseDefaults.colours.text
+                self.inspectorTooltip:AddLine(focusedFrame:GetDebugName(), headerColour.r, headerColour.g, headerColour
+                    .b)
+                self.inspectorTooltip:AddLine(" Uses font objects:")
+
+                for _, fontString in pairs(fontStrings) do
+                    local regionName = fontString:GetName() or "Anonymous"
+                    local fontObject = fontString:GetFontObject()
+                    local fontInstanceName = fontObject and fontObject:GetName()
+                    if fontInstanceName then
+                        self.inspectorTooltip:AddLine("  - " .. regionName .. ": |cffffffff" .. fontInstanceName .. "|r")
+                    else
+                        self.inspectorTooltip:AddLine("  - " .. regionName .. ": |cff808080(No Global Instance)|r")
+                    end
                 end
-            else
-                self.inspectorTooltip:AddLine(" Has no text")
+                self.inspectorTooltip:AddLine(" ")
             end
         end
     end
