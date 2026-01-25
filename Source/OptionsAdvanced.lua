@@ -215,11 +215,11 @@ function addonTable:CreateAdvancedOptionsPanel()
     panel.name = "Advanced"
     local logo = self:CreatePanelHeader(panel)
 
-    local listingHeader = self:CreateSectionHeader(panel, "Listing", logo)
+    local header = self:CreateSectionHeader(panel, "Font instances", logo)
 
     local searchBox = CreateFrame("EditBox", nil, panel, "SearchBoxTemplate")
     searchBox:SetSize(400, 22)
-    searchBox:SetPoint("TOPLEFT", listingHeader, "BOTTOMLEFT", 5, -15)
+    searchBox:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 5, -15)
     searchBox:SetAutoFocus(false)
     searchBox.Instructions:SetText("Search for a specific font instance")
     local UpdateList -- Forward declaration

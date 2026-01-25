@@ -148,14 +148,38 @@ function addonTable:ApplyFont(fontName, font)
     local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
     local newHeight = math.max(self.originalFonts[fontName].height + self.db.offsets.height, 0.5)
 
-    local newFlagsSplit = {}
-    for flagName, flagState in pairs(self.db.flags) do
-        -- Apply the flag if the box is checked, or unchecked but in the original values
-        -- If greyed out, don't add it
-        if flagState or (flagState == false and string.find(self.originalFonts[fontName].flags, flagName)) then
-            table.insert(newFlagsSplit, flagName)
+    local activeFlags = {}
+    local originalFlags = self.originalFonts[fontName].flags or ""
+
+    -- Parse original flags into a set
+    for flag in string.gmatch(originalFlags, "[^,]+") do
+        flag = flag:match("^%s*(.-)%s*$") -- Trim whitespace
+        if flag and flag ~= "" then
+            activeFlags[flag:upper()] = true
         end
     end
+
+    -- Apply overrides using a KNOWN list of flags
+    -- We use a hardcoded list because pairs(self.db.flags) skips nil keys, preventing us from seeing the "Force Off" value
+
+    for _, flagName in ipairs({ "MONOCHROME", "OUTLINE", "THICKOUTLINE" }) do
+        local flagState = self.db.flags[flagName]
+
+        if flagState == true then
+            -- Force On
+            activeFlags[flagName] = true
+        elseif flagState == nil then
+            -- Force Off
+            activeFlags[flagName] = nil
+        end
+    end
+
+    -- Rebuild the comma-separated string
+    local newFlagsSplit = {}
+    for flag in pairs(activeFlags) do
+        table.insert(newFlagsSplit, flag)
+    end
+    table.sort(newFlagsSplit)
     local newFlags = table.concat(newFlagsSplit, ", ")
 
     self.isUpdating = true

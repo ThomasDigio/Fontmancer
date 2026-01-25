@@ -1,6 +1,6 @@
 ## Interface: 120000, 50503, 11508
-## Version: 2.1
-## Title: |cffee992bF|r|cffe89830o|r|cffe29836n|r|cffdd973ct|r|cffd79743m|r|cffd19547a|r|cffcb954dn|r|cffc69453c|r|cffc09359e|r|cffba925er|r
+## Version: 2.1.0
+## Title: |cffee992bF|r|cfff09f27o|r|cfff1a422n|r|cfff3aa1et|r|cfff5af1am|r|cfff6b516a|r|cfff8bb11n|r|cfffac00dc|r|cfffcc609e|r|cfffdcb04r|r
 ## Notes: Magically apply the same font to your whole UI with a single click!
 ## Author: Orazur
 ## SavedVariables: FontmancerDB
