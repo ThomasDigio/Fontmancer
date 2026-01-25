@@ -1,5 +1,19 @@
 local addonName, addonTable = ...
 
+function addonTable:CreatePanelHeader(panel)
+    local logo = panel:CreateTexture(nil, "ARTWORK")
+    logo:SetSize(25, 25)
+    logo:SetPoint("TOPLEFT", 15, -15)
+    logo:SetTexture(self.metadata.LOGO_PATH)
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("LEFT", logo, "RIGHT", 10, -2)
+    title:SetText(self.metadata.TITLE)
+    local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    description:SetPoint("LEFT", title, "RIGHT", 20, 0)
+    description:SetText(self.metadata.DESCRIPTION)
+    return logo
+end
+
 function addonTable:CreateSectionHeader(parent, text, relativeTo)
     local headerFrame = CreateFrame("Frame", nil, parent)
     headerFrame:SetHeight(20)
@@ -26,8 +40,9 @@ function addonTable:CreateSectionHeader(parent, text, relativeTo)
     return headerFrame
 end
 
-function addonTable:CreateTriStateCheck(label, key, descriptionFrame, descriptionText, relativeTo, xOffset, isFirst)
-    local button = CreateFrame("CheckButton", nil, self.scrollContent, "UICheckButtonTemplate")
+function addonTable:CreateTriStateCheck(label, key, parent, descriptionFrame, descriptionText, relativeTo, xOffset,
+                                        isFirst)
+    local button = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     if isFirst then
         button:SetPoint("TOPLEFT", relativeTo, "TOPLEFT", xOffset, 0)
     else
@@ -87,8 +102,8 @@ function addonTable:CreateTriStateCheck(label, key, descriptionFrame, descriptio
     return button
 end
 
-function addonTable:CreateSlider(name, text, minVal, maxVal, step, dbTable, dbKey, relativeTo, xOffset, yOffset)
-    local slider = CreateFrame("Slider", addonName .. name .. "Slider", self.scrollContent, "OptionsSliderTemplate")
+function addonTable:CreateSlider(name, label, parent, minVal, maxVal, step, dbTable, dbKey, relativeTo, xOffset, yOffset)
+    local slider = CreateFrame("Slider", addonName .. name .. "Slider", parent, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
     slider:SetMinMaxValues(minVal, maxVal)
     slider:SetValueStep(step)
@@ -96,19 +111,19 @@ function addonTable:CreateSlider(name, text, minVal, maxVal, step, dbTable, dbKe
     slider:SetValue(dbTable[dbKey])
     _G[slider:GetName() .. "Low"]:SetText(minVal)
     _G[slider:GetName() .. "High"]:SetText(maxVal)
-    _G[slider:GetName() .. "Text"]:SetText(text .. ": " .. dbTable[dbKey])
+    _G[slider:GetName() .. "Text"]:SetText(label .. ": " .. dbTable[dbKey])
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
         dbTable[dbKey] = value
-        _G[self:GetName() .. "Text"]:SetText(text .. ": " .. value)
+        _G[self:GetName() .. "Text"]:SetText(label .. ": " .. value)
         addonTable:ReplaceAllFonts()
     end)
     return slider
 end
 
-function addonTable:CreateColourPicker(label, dbTable, relativeTo, xOffset, yOffset, callbackFunc)
-    local frame = CreateFrame("Frame", nil, self.scrollContent)
+function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffset, yOffset, callbackFunc)
+    local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(200, 30)
     frame:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
 
@@ -164,4 +179,36 @@ function addonTable:CreateColourPicker(label, dbTable, relativeTo, xOffset, yOff
             end
         })
     end)
+end
+
+function addonTable:CreateReloadButton(parent, relativeTo, xOffset, yOffset, callback)
+    local reloadButton = CreateFrame("Button", nil, parent)
+    reloadButton:SetSize(15, 15)
+    reloadButton:SetPoint("LEFT", relativeTo, "RIGHT", xOffset, yOffset)
+    reloadButton:SetNormalAtlas("UI-RefreshButton")
+    reloadButton:SetScript("OnClick", callback)
+    local buttonTexture = reloadButton:GetNormalTexture()
+    local animIn = buttonTexture:CreateAnimationGroup()
+    local rotateIn = animIn:CreateAnimation("Rotation")
+    rotateIn:SetDegrees(-25)
+    rotateIn:SetDuration(0.2)
+    animIn:SetScript("OnFinished", function() buttonTexture:SetRotation(math.rad(-25)) end)
+    local animOut = buttonTexture:CreateAnimationGroup()
+    local rotateOut = animOut:CreateAnimation("Rotation")
+    rotateOut:SetDegrees(25)
+    rotateOut:SetDuration(0.2)
+    animOut:SetScript("OnFinished", function() buttonTexture:SetRotation(0) end)
+    reloadButton:SetScript("OnEnter", function()
+        animIn:Play()
+    end)
+    reloadButton:SetScript("OnLeave", function()
+        if animIn:IsPlaying() then
+            animIn:Stop()
+            buttonTexture:SetRotation(0)
+        else
+            buttonTexture:SetRotation(math.rad(-25))
+            animOut:Play()
+        end
+    end)
+    return reloadButton
 end
