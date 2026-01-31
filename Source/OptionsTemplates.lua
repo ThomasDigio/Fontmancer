@@ -1,4 +1,5 @@
 local addonName, addonTable = ...
+local LSM = LibStub("LibSharedMedia-3.0")
 
 function addonTable:CreatePanelHeader(panel)
     local logo = panel:CreateTexture(nil, "ARTWORK")
@@ -40,16 +41,38 @@ function addonTable:CreateSectionHeader(parent, text, relativeTo)
     return headerFrame
 end
 
-function addonTable:CreateTriStateCheck(label, key, parent, descriptionFrame, descriptionText, relativeTo, xOffset,
-                                        isFirst)
-    local button = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-    if isFirst then
-        button:SetPoint("TOPLEFT", relativeTo, "TOPLEFT", xOffset, 0)
-    else
-        button:SetPoint("LEFT", relativeTo, "RIGHT", xOffset, 0)
-    end
+function addonTable:CreateCheckbox(label, key, parent, onEnter, onLeave)
+    local button = CreateFrame("CheckButton", key, parent, "SettingsCheckboxTemplate")
+    button.text = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    button.text:SetPoint("LEFT", button, "RIGHT", 5, 0)
     button.text:SetText(label)
-    button.text:SetFontObject("GameFontNormalLarge")
+    button:SetScript("OnEnter", function()
+        if onEnter then onEnter(button) end
+    end)
+    button:SetScript("OnLeave", function()
+        if onLeave then onLeave(button) end
+    end)
+    return button
+end
+
+function addonTable:CreateTriStateCheckbox(label, key, parent, descriptionFrame, descriptionText)
+    local button = self:CreateCheckbox(label, nil, parent, function()
+        local state = addonTable.db.flags[key]
+        local subText = ""
+        if state == false then
+            subText = "|cff808080(Left as default)|r"
+        elseif state == true then
+            subText = "|cff00ff00(Applied everywhere)|r"
+        else
+            subText = "|cffff0000(Removed everywhere)|r"
+        end
+
+        descriptionFrame:SetText(descriptionText .. "\n" .. subText)
+        UIFrameFadeIn(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 1)
+    end, function()
+        UIFrameFadeOut(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 0)
+    end)
+    button.text:SetFontObject("GameFontNormalLarge") -- Makes the text a bit larger
 
     local function UpdateVisuals()
         local state = addonTable.db.flags[key]
@@ -79,46 +102,40 @@ function addonTable:CreateTriStateCheck(label, key, parent, descriptionFrame, de
         button:GetScript("OnEnter")(button)
     end)
 
-    button:SetScript("OnEnter", function()
-        local state = addonTable.db.flags[key]
-        local subText = ""
-        if state == false then
-            subText = "|cff808080(Left as default)|r"
-        elseif state == true then
-            subText = "|cff00ff00(Applied everywhere)|r"
-        else
-            subText = "|cffff0000(Removed everywhere)|r"
-        end
-
-        descriptionFrame:SetText(descriptionText .. "\n" .. subText)
-        UIFrameFadeIn(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 1)
-    end)
-
-    button:SetScript("OnLeave", function()
-        UIFrameFadeOut(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 0)
-    end)
-
     UpdateVisuals()
     return button
 end
 
-function addonTable:CreateSlider(name, label, parent, minVal, maxVal, step, dbTable, dbKey, relativeTo, xOffset, yOffset)
-    local slider = CreateFrame("Slider", addonName .. name .. "Slider", parent, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
-    slider:SetMinMaxValues(minVal, maxVal)
-    slider:SetValueStep(step)
-    slider:SetObeyStepOnDrag(true)
-    slider:SetValue(dbTable[dbKey])
-    _G[slider:GetName() .. "Low"]:SetText(minVal)
-    _G[slider:GetName() .. "High"]:SetText(maxVal)
-    _G[slider:GetName() .. "Text"]:SetText(label .. ": " .. dbTable[dbKey])
+function addonTable:CreateSlider(name, label, parent, minVal, maxVal, step, dbTable, dbKey, anchor, relativeTo,
+                                 relativeAnchor, xOffset, yOffset)
+    local slider = CreateFrame("Frame", addonName .. name .. "Slider", parent, "MinimalSliderWithSteppersTemplate")
+    slider:Init(dbTable[dbKey], minVal, maxVal, (maxVal - minVal) / step, nil)
 
-    slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value / step + 0.5) * step
+    slider:SetWidth(160)
+    slider:SetPoint(anchor, relativeTo, relativeAnchor, xOffset, yOffset)
+
+    slider.Text = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    slider.Text:SetPoint("RIGHT", slider, "LEFT", -10, 0)
+    slider.Text:SetJustifyH("RIGHT")
+
+    slider.FormatValue = function(self, value)
+        if step % 1 == 0 then
+            return string.format("%d", value)
+        else
+            return string.format("%.1f", value)
+        end
+    end
+    local function UpdateText(value)
+        slider.Text:SetText(label .. ": " .. slider:FormatValue(value))
+    end
+    UpdateText(dbTable[dbKey])
+
+    slider:RegisterCallback("OnValueChanged", function(self, value)
         dbTable[dbKey] = value
-        _G[self:GetName() .. "Text"]:SetText(label .. ": " .. value)
+        UpdateText(value)
         addonTable:ReplaceAllFonts()
     end)
+
     return slider
 end
 
@@ -127,20 +144,10 @@ function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffs
     frame:SetSize(200, 30)
     frame:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
 
-    local check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    check:SetPoint("LEFT", 0, 0)
-    check.text:SetText("Override " .. label .. " colour")
-    check:SetChecked(dbTable.isEnabled)
-
-    local swatch = CreateFrame("Button", nil, frame)
-    swatch:SetSize(20, 20)
-    swatch:SetPoint("LEFT", check.text, "RIGHT", 10, 0)
-    local bg = swatch:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(dbTable.r, dbTable.g, dbTable.b)
-    swatch.bg = bg
-
-    check:SetScript("OnClick", function(self)
+    local checkbox = self:CreateCheckbox("Override " .. label .. " colour", nil, frame)
+    checkbox:SetPoint("LEFT", 0, 0)
+    checkbox:SetChecked(dbTable.isEnabled)
+    checkbox:SetScript("OnClick", function(self)
         dbTable.isEnabled = self:GetChecked()
 
         if dbTable.isEnabled then
@@ -150,6 +157,13 @@ function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffs
         end
     end)
 
+    local swatch = CreateFrame("Button", nil, frame)
+    swatch:SetSize(20, 20)
+    swatch:SetPoint("LEFT", checkbox.text, "RIGHT", 10, 0)
+    local bg = swatch:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(dbTable.r, dbTable.g, dbTable.b)
+    swatch.bg = bg
     swatch:SetScript("OnClick", function()
         local oldR, oldG, oldB, oldA = dbTable.r, dbTable.g, dbTable.b, dbTable.a
 
@@ -186,8 +200,22 @@ function addonTable:CreateReloadButton(parent, relativeTo, xOffset, yOffset, cal
     reloadButton:SetSize(15, 15)
     reloadButton:SetPoint("LEFT", relativeTo, "RIGHT", xOffset, yOffset)
     reloadButton:SetNormalAtlas("UI-RefreshButton")
-    reloadButton:SetScript("OnClick", callback)
+
     local buttonTexture = reloadButton:GetNormalTexture()
+
+    -- Click animation
+    local animClick = buttonTexture:CreateAnimationGroup()
+    local rotateClick = animClick:CreateAnimation("Rotation")
+    rotateClick:SetDegrees(-360)
+    rotateClick:SetDuration(0.5)
+    rotateClick:SetSmoothing("OUT")
+    reloadButton:SetScript("OnClick", function()
+        animClick:Stop()
+        animClick:Play()
+        if callback then callback() end
+    end)
+
+    -- Hover animation
     local animIn = buttonTexture:CreateAnimationGroup()
     local rotateIn = animIn:CreateAnimation("Rotation")
     rotateIn:SetDegrees(-25)
@@ -211,4 +239,73 @@ function addonTable:CreateReloadButton(parent, relativeTo, xOffset, yOffset, cal
         end
     end)
     return reloadButton
+end
+
+function addonTable:CreateFontDropdown(parent)
+    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    return dropdown
+end
+
+function addonTable:SetupFontMenu(dropdown, getVal, setVal)
+    dropdown:SetText(getVal() or "Select Font")
+    dropdown:SetupMenu(function(dropdown, rootDescription)
+        local fonts = LSM:HashTable(LSM.MediaType.FONT)
+        local sorted = {}
+        for k in pairs(fonts) do table.insert(sorted, k) end
+        table.sort(sorted)
+
+        for _, fontName in ipairs(sorted) do
+            local radioButton = rootDescription:CreateRadio(fontName,
+                function() return getVal() == fontName end,
+                function()
+                    setVal(fontName)
+                    dropdown:SetText(fontName)
+                end)
+
+            -- Custom dropdown styling to preview the font
+            -- We can't directly edit the button's font string for some stupid bs reason so we have to do this bs workaround that I hate
+            -- IT'S BS
+            radioButton:AddInitializer(function(button)
+                local overlay
+
+                -- We scan children to find it because 'button.overlay' references are often wiped during recycling
+                for _, child in ipairs({ button:GetChildren() }) do
+                    if child.IsFontmancerPreview then
+                        overlay = child
+                        break
+                    end
+                end
+
+                if not overlay then
+                    overlay = CreateFrame("Frame", nil, button)
+                    overlay:SetAllPoints(button)
+
+                    overlay.IsFontmancerPreview = true
+
+                    overlay.fontString = overlay:CreateFontString(nil, "ARTWORK")
+                    overlay.fontString:SetPoint("LEFT", button, "LEFT", 25, 0)
+
+                    overlay:SetScript("OnUpdate", function(self)
+                        -- If the parent's default text is visible, it means the button has been reset for a non-Fontmancer menu
+                        if self:GetParent().fontString:GetAlpha() > 0 then
+                            self:Hide()
+                        end
+                    end)
+                end
+
+                local fontPath = LSM:Fetch(LSM.MediaType.FONT, fontName)
+                if fontPath then
+                    overlay.fontString:SetFont(fontPath, 14, "")
+                end
+
+                overlay.fontString:SetText(fontName) -- Must be set after the font
+
+                -- Hide the original text and show the overlay instead
+                button.fontString:SetAlpha(0)
+                overlay:Show()
+            end)
+        end
+
+        rootDescription:SetScrollMode(300) -- Needs to be done last
+    end)
 end

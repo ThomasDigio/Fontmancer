@@ -16,6 +16,23 @@ function addonTable:CreateAdvancedOptionsPanel()
     local UpdateList
     self:CreateReloadButton(panel, searchBox, 10, 0, function() UpdateList() end)
 
+    self:InitialiseInspector()
+    local inspectorButton = CreateFrame("Button", nil, panel)
+    inspectorButton:SetSize(18, 18)
+    inspectorButton:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", -5, -17)
+    inspectorButton:SetNormalAtlas("UI_Editor_Eye_Icon")
+    inspectorButton:SetHighlightAtlas("UI_Editor_Eye_Icon")
+    inspectorButton:GetHighlightTexture():SetAlpha(0.5)
+    inspectorButton:SetScript("OnClick", function()
+        addonTable:ToggleInspection()
+    end)
+    inspectorButton:SetScript("OnEnter", function(selfBtn)
+        GameTooltip:SetOwner(selfBtn, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Toggle Inspector")
+        GameTooltip:Show()
+    end)
+    inspectorButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     local scrollFrame = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -10)
     scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -30, 0)
@@ -111,7 +128,8 @@ function addonTable:CreateAdvancedOptionsPanel()
         local search = searchBox:GetText():lower()
         local keys = {}
         for k in pairs(self.originalFonts) do
-            if search == "" or k:lower():find(search) then
+            -- Filter out dynamic instances without names because there's no point storing overrides for them
+            if (search == "" or k:lower():find(search)) and not k:lower():find("^table:") then
                 table.insert(keys, k)
             end
         end

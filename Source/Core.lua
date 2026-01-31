@@ -8,7 +8,6 @@ addonTable.metadata = {
 }
 addonTable.originalFonts = {}
 addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
-addonTable.initiallySelectedFont = nil
 -- Does not contain flags (need special handling because of possible nil values)
 addonTable.databaseDefaults = {
     selectedFont = nil,
@@ -84,7 +83,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         addonTable:HookCallbacks()
 
         addonTable:CreateOptionsPanel()
-        addonTable:CreateAdvancedOptionsPanel()
+        -- addonTable:CreateAdvancedOptionsPanel()
     end
 end)
 

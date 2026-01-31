@@ -1,9 +1,6 @@
 local addonName, addonTable = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 
-addonTable.inspectedFont = nil
-
--- Helper: Format values for display
 local function FormatValue(val, type)
     if type == "number" then
         return string.format("%.1f", val or 0)
@@ -140,8 +137,7 @@ function addonTable:CreateComparisonTooltip()
         -- Editor Container (Edit Mode)
         local editorFrame = CreateFrame("Frame", nil, row)
         editorFrame:SetHeight(20)
-        editorFrame:SetPoint("RIGHT", resetBtn, "LEFT", -5, 0)
-        editorFrame:SetWidth(100)
+        -- Anchors are set dynamically in ShowComparison to align columns
         row.editorFrame = editorFrame
 
         if config.type == "color" then
@@ -153,13 +149,17 @@ function addonTable:CreateComparisonTooltip()
             swatch.bg:SetColorTexture(1, 1, 1)
             row.editorWidget = swatch
         elseif config.type == "font" then
-            local dropdown = CreateFrame("DropdownButton", nil, editorFrame, "WowStyle1DropdownTemplate")
-            dropdown:SetSize(90, 20)
+            local dropdown = addonTable:CreateFontDropdown(editorFrame)
+            dropdown:SetHeight(20)
+            -- Anchor to both sides so it fills the frame
+            dropdown:SetPoint("LEFT", 0, 0)
             dropdown:SetPoint("RIGHT", 0, 0)
             row.editorWidget = dropdown
         else
             local editBox = CreateFrame("EditBox", nil, editorFrame, "InputBoxTemplate")
-            editBox:SetSize(90, 20)
+            editBox:SetHeight(20)
+            -- Anchor to both sides so it fills the frame
+            editBox:SetPoint("LEFT", 0, 0)
             editBox:SetPoint("RIGHT", 0, 0)
             editBox:SetAutoFocus(false)
             row.editorWidget = editBox
@@ -203,7 +203,13 @@ function addonTable:CreateComparisonTooltip()
                     self:Hide()
                     self.animState = "CLOSED"
                 else
-                    self:SetHeight(h + ((0 - h) * self.animSpeed * elapsed))
+                    local newHeight = h + ((0 - h) * self.animSpeed * elapsed)
+                    self:SetHeight(newHeight)
+
+                    -- Fade out if height is small to avoid border clipping
+                    if newHeight < 20 then
+                        self:SetAlpha(math.min(1, newHeight / 20))
+                    end
                 end
             end
         end
@@ -306,7 +312,7 @@ function addonTable:ShowComparison(anchorFrame, fontName)
         if isEditing and isManaged then
             -- EDIT MODE
             row.val:Hide()
-            row.statusIcon:Hide() -- Hide status icon in edit mode
+            row.statusIcon:Hide()
             row.editorFrame:Show()
             local widget = row.editorWidget
 
@@ -330,19 +336,10 @@ function addonTable:ShowComparison(anchorFrame, fontName)
                     })
                 end)
             elseif type == "font" then
-                widget:SetupMenu(function(dropdown, rootDescription)
-                    rootDescription:SetMinimumWidth(200)
-                    local fonts = LSM:HashTable(LSM.MediaType.FONT)
-                    local sorted = {}
-                    for k in pairs(fonts) do table.insert(sorted, k) end
-                    table.sort(sorted)
-                    for _, fName in ipairs(sorted) do
-                        rootDescription:CreateRadio(fName, function() return (currVal == fName) end, function()
-                            SaveSpecific(specificKey, fName)
-                        end)
-                    end
-                end)
-                widget:SetText(currVal)
+                self:SetupFontMenu(widget,
+                    function() return currVal end,
+                    function(val) SaveSpecific(specificKey, val) end
+                )
             else
                 -- Format numbers (e.g. 10.0) so they don't appear as 10.000000953674
                 local text = currVal
@@ -397,23 +394,47 @@ function addonTable:ShowComparison(anchorFrame, fontName)
         FillRow("Shadow Y", sy, "number", "shadowY")
     end
 
-    -- Sizing
+    -- Sizing Logic
+    -- We calculate the width required for Non-Edit mode (Label + Value).
+    -- This ensures the tooltip size is consistent regardless of Edit Mode.
     local maxTextWidth = 0
-    if not isEditing then
-        local titleWidth = content.title:GetStringWidth()
-        if titleWidth > maxTextWidth then maxTextWidth = titleWidth end
-        for _, row in pairs(content.rows) do
-            local width = row.label:GetStringWidth() + row.val:GetStringWidth() + 40
-            if width > maxTextWidth then maxTextWidth = width end
-        end
-    else
-        maxTextWidth = 220
+    local maxLabelWidth = 0
+
+    -- 1. Check Title Width
+    local titleWidth = content.title:GetStringWidth()
+    if titleWidth > maxTextWidth then maxTextWidth = titleWidth end
+
+    -- 2. Check Row Widths (Label + Value) and track max label for alignment
+    for _, row in pairs(content.rows) do
+        local labelW = row.label:GetStringWidth()
+        if labelW > maxLabelWidth then maxLabelWidth = labelW end
+
+        local rowWidth = labelW + row.val:GetStringWidth() + 40
+        if rowWidth > maxTextWidth then maxTextWidth = rowWidth end
     end
 
+    -- 3. Set Tooltip Width
     tooltip:SetWidth(math.max(300, maxTextWidth + 30))
+
+    -- 4. Dynamic Layout for Edit Mode
+    if isEditing then
+        for _, row in pairs(content.rows) do
+            if row.editorFrame then
+                row.editorFrame:ClearAllPoints()
+                -- Right anchor: Reset button (or right edge if hidden)
+                row.editorFrame:SetPoint("RIGHT", row.resetBtn, "LEFT", -5, 0)
+
+                -- Left anchor: Align to the longest label + Toggle width + Gaps
+                -- Toggle(20) + Gap(5) + maxLabelWidth + Gap(10)
+                row.editorFrame:SetPoint("LEFT", row, "LEFT", 20 + 5 + maxLabelWidth + 10, 0)
+            end
+        end
+    end
+
     tooltip:ClearAllPoints()
     tooltip:SetPoint("TOPLEFT", anchorFrame, "TOPRIGHT", 5, 0)
     tooltip:Show()
+    tooltip:SetAlpha(1) -- Reset alpha since it fades during close
     tooltip.targetHeight = 20 + 15 + 8 + (8 * 26) + 30
     content:SetAlpha(0)
     if tooltip.animState == "CLOSED" then tooltip:SetHeight(1) end

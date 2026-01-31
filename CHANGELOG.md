@@ -1,1 +1,3 @@
-- Added new 'Advanced' options panel for a more granular control for people who want it. Please open an issue on Github for any feedback you have, even if not directly a bug!
+- Added setting to exclude certain texts from having new flags applied due to unreadable results
+- Fixed font dropdown not having a scrollbar
+- Slightly re-organised existing option panel

@@ -1,75 +1,22 @@
 local addonName, addonTable = ...
-local LSM = LibStub("LibSharedMedia-3.0")
-
 
 function addonTable:CreateOptionsPanel()
     local panel = CreateFrame("Frame", addonName .. "OptionsPanel")
     local logo = self:CreatePanelHeader(panel)
 
     local fontHeader = self:CreateSectionHeader(panel, "Font", logo)
-    local fontDropDown = CreateFrame("DropdownButton", addonName .. "FontDropDown", panel,
-        "WowStyle1DropdownTemplate")
-    fontDropDown:SetPoint("TOPLEFT", fontHeader, "BOTTOMLEFT", 0, -20)
-    fontDropDown:SetWidth(200)
-    fontDropDown:SetText(addonTable.db.selectedFont or "Select Font")
     local UpdateReloadWarning -- Declare function early so the dropdown can call it
-    fontDropDown:SetupMenu(function(dropdown, rootDescription)
-        rootDescription:SetMinimumWidth(300)
-
-        local fonts = LSM:HashTable(LSM.MediaType.FONT)
-        local sorted = {}
-        for k in pairs(fonts) do table.insert(sorted, k) end
-        table.sort(sorted)
-        if #sorted == 0 then
-            rootDescription:CreateButton("No fonts found", function() end)
-            return
+    local fontDropDown = self:CreateFontDropdown(panel)
+    fontDropDown:SetPoint("TOPLEFT", fontHeader, "BOTTOMLEFT", 30, -20)
+    fontDropDown:SetWidth(200)
+    self:SetupFontMenu(fontDropDown,
+        function() return addonTable.db.selectedFont end,
+        function(val)
+            addonTable.db.selectedFont = val
+            addonTable:ReplaceAllFonts()
+            if UpdateReloadWarning then UpdateReloadWarning() end
         end
-
-        for _, fontName in ipairs(sorted) do
-            local radio = rootDescription:CreateRadio(fontName,
-                function() return addonTable.db.selectedFont == fontName end,
-                function()
-                    addonTable.db.selectedFont = fontName
-                    addonTable:ReplaceAllFonts()
-                    UpdateReloadWarning()
-                end)
-            -- We create a custom dropdown where each font option is rendered in its own style
-            radio:AddInitializer(function(button)
-                -- For that, we have to create our own custom FontString because we're not allowed to modify the default one
-                if not button.customFontLayer then
-                    local overlay = CreateFrame("Frame", nil, button)
-                    overlay:SetAllPoints(button)
-
-                    local fs = overlay:CreateFontString(nil, "ARTWORK")
-                    fs:SetPoint("LEFT", button, "LEFT", 25, 0)
-                    overlay.fs = fs
-
-                    button.customFontLayer = overlay
-
-                    -- Hide our custom text so it doesn't overlap on future dropdowns
-                    button:HookScript("OnHide", function(self)
-                        if self.customFontLayer then
-                            self.customFontLayer:Hide()
-                        end
-                    end)
-                end
-
-                local fs = button.customFontLayer.fs
-                local fontPath = LSM:Fetch(LSM.MediaType.FONT, fontName)
-                if fontPath then
-                    fs:SetFont(fontPath, 14, "")
-                end
-                fs:SetText(fontName)
-
-                button.customFontLayer:Show()
-
-                -- Hide the original text
-                if button.fontString then
-                    button.fontString:SetAlpha(0)
-                end
-            end)
-        end
-    end)
+    )
 
     local warningFrame = CreateFrame("Frame", nil, panel)
     local warningIcon = warningFrame:CreateTexture(nil, "ARTWORK")
@@ -93,11 +40,10 @@ function addonTable:CreateOptionsPanel()
             warningText:Hide()
         end
     end
-    local nameplateCheck = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    nameplateCheck:SetPoint("TOPLEFT", fontDropDown, "BOTTOMLEFT", 0, -10)
-    nameplateCheck.text:SetText("Exclude Nameplates")
-    nameplateCheck:SetChecked(addonTable.db.excludeNameplates)
-    local reloadButton = self:CreateReloadButton(panel, nameplateCheck.text, 10, 0, C_UI.Reload)
+    local nameplateCheckbox = self:CreateCheckbox("Exclude Nameplates", nil, panel)
+    nameplateCheckbox:SetPoint("TOPLEFT", fontDropDown, "BOTTOMLEFT", 0, -10)
+    nameplateCheckbox:SetChecked(addonTable.db.excludeNameplates)
+    local reloadButton = self:CreateReloadButton(panel, nameplateCheckbox.text, 10, 0, C_UI.Reload)
     reloadButton:SetAlpha(0)
     local reloadWarning = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     reloadWarning:SetText("|cffff9900You will need to reload your UI for that option to take effect!|r")
@@ -117,16 +63,16 @@ function addonTable:CreateOptionsPanel()
             UIFrameFadeOut(reloadWarning, 0.2, reloadWarning:GetAlpha(), 0)
         end
     end
-    nameplateCheck:SetScript("OnClick", function(self)
+    nameplateCheckbox:SetScript("OnClick", function(self)
         addonTable.db.excludeNameplates = self:GetChecked()
         addonTable:ReplaceAllFonts()
         UpdateNameplateReload()
     end)
 
-    local flagsHeader = self:CreateSectionHeader(panel, "Flags", nameplateCheck)
+    local flagsHeader = self:CreateSectionHeader(panel, "Flags", nameplateCheckbox)
     local flagRowAnchor = CreateFrame("Frame", nil, panel)
     flagRowAnchor:SetSize(1, 1)
-    flagRowAnchor:SetPoint("TOP", flagsHeader, "BOTTOM", 0, -15)
+    flagRowAnchor:SetPoint("TOP", flagsHeader, "BOTTOM", 0, -20)
     flagRowAnchor:SetPoint("LEFT", panel, "LEFT", 20, 0)
     flagRowAnchor:SetPoint("RIGHT", panel, "RIGHT", -20, 0)
     local flagsDescription = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -136,31 +82,26 @@ function addonTable:CreateOptionsPanel()
     -- Not fully sure I understand how that works but it works
     flagsDescription:SetTextColor(1, 1, 1, 1)
     flagsDescription:SetAlpha(0)
-    local monoCheck = self:CreateTriStateCheck("Monochrome", "MONOCHROME", panel, flagsDescription,
-        "Renders the font without antialiasing",
-        flagRowAnchor,
-        70, true)
-    local outlineCheck = self:CreateTriStateCheck("Outline", "OUTLINE", panel, flagsDescription,
-        "Renders the font with a black outline",
-        monoCheck,
-        135)
-    self:CreateTriStateCheck("Thick", "THICKOUTLINE", panel, flagsDescription,
-        "Renders the font with a thick black outline",
-        outlineCheck, 100)
+    local outlineCheck = self:CreateTriStateCheckbox("Outline", "OUTLINE", panel, flagsDescription,
+        "Renders the font with a black outline")
+    outlineCheck:SetPoint("TOP", flagRowAnchor, "TOP", -25, 0)
+    local thickCheck = self:CreateTriStateCheckbox("Thick", "THICKOUTLINE", panel, flagsDescription,
+        "Renders the font with a thick black outline")
+    thickCheck:SetPoint("LEFT", outlineCheck.text, "RIGHT", 40, 0)
+    local monoCheck = self:CreateTriStateCheckbox("Monochrome", "MONOCHROME", panel, flagsDescription,
+        "Renders the font without antialiasing")
+    monoCheck:SetPoint("RIGHT", outlineCheck, "LEFT", -135, 0)
 
     local offsetHeader = self:CreateSectionHeader(panel, "Offsets", flagsDescription)
-    local sizeSlider = self:CreateSlider("Size", "Size", panel, -10, 10, 0.5, addonTable.db.offsets,
-        "height",
-        offsetHeader,
-        100, -30)
-    local spaceSlider = self:CreateSlider("Spacing", "Spacing", panel, -10, 10, 0.5, addonTable.db.offsets,
-        "spacing",
-        sizeSlider, 0, -40)
-    local shadowXSlider = self:CreateSlider("ShadowX", "Shadow X", panel, -10, 10, 0.5,
-        addonTable.db.offsets.shadow, "x",
-        offsetHeader, 330, -30)
-    self:CreateSlider("ShadowY", "Shadow Y", panel, -10, 10, 0.5, addonTable.db.offsets.shadow, "y",
-        shadowXSlider, 0, -40)
+
+    local sizeSlider = self:CreateSlider("Size", "Size", panel, -10, 10, 0.5, addonTable.db.offsets, "height", "TOPRIGHT",
+        offsetHeader, "BOTTOM", -20, -20)
+    local spaceSlider = self:CreateSlider("Spacing", "Spacing", panel, -10, 10, 0.5, addonTable.db.offsets, "spacing",
+        "TOP", sizeSlider, "BOTTOM", 0, -10)
+    local shadowXSlider = self:CreateSlider("ShadowX", "Shadow X", panel, -10, 10, 0.5, addonTable.db.offsets.shadow, "x",
+        "TOPLEFT", offsetHeader, "BOTTOM", 110, -20)
+    self:CreateSlider("ShadowY", "Shadow Y", panel, -10, 10, 0.5, addonTable.db.offsets.shadow, "y", "TOP", shadowXSlider,
+        "BOTTOM", 0, -10)
 
     local colourHeader = self:CreateSectionHeader(panel, "Colours", spaceSlider)
     self:CreateColourPicker("text", panel, addonTable.db.colours.text, colourHeader, 100, -20,

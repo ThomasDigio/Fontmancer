@@ -21,9 +21,9 @@ function addonTable:HookCallbacks()
         self:ApplyFont(name, font)
     end)
 
-    hook("SetFontHeight", function(name, height)
+    hook("SetFontHeight", function(name, font, height)
         self.originalFonts[name].height = height
-        self:ApplyFont(name, _G[name])
+        self:ApplyFont(name, font)
     end)
 
     hook("SetSpacing", function(name, font, spacing)
@@ -41,12 +41,10 @@ function addonTable:HookCallbacks()
         self:ApplyTextColour(name, font)
     end)
 
-    hook("SetAlpha", function(name, alpha)
-        print(name, alpha)
+    hook("SetAlpha", function(name, font, alpha)
         self.originalFonts[name].colours.text.a = alpha
-        self:ApplyTextColour(name, _G[name])
+        self:ApplyTextColour(name, font)
     end)
-
 
     hook("SetShadowColor", function(name, font, r, g, b, a)
         self.originalFonts[name].colours.shadow = {
