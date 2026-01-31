@@ -146,9 +146,9 @@ function addonTable:PopulateTooltip()
 
                 for _, fontString in pairs(fontStrings) do
                     local fontStringName = fontString:GetName() or fontString:GetDebugName() or "Anonymous"
-                    local fontInstanceName = fontString:GetFontObject():GetName()
+                    local fontName = fontString:GetFontObject():GetName()
                     self.inspectorTooltip:AddLine("  - " ..
-                        fontStringName .. ": |cffffffff" .. fontInstanceName .. "|r")
+                        fontStringName .. ": |cffffffff" .. fontName .. "|r")
                 end
                 self.inspectorTooltip:AddLine(" ")
             end
