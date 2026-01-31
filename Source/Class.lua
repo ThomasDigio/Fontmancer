@@ -1,3 +1,7 @@
+---@alias FontInstance
+---| Font
+---| FontString
+
 ---@class Fontmancer
 -- Defined in Callbacks.lua
 ---@field HookCallbacks fun(self: Fontmancer): nil
@@ -8,15 +12,15 @@
 ---@field initiallySelectedFont string
 ---@field isUpdating boolean
 ---@field metadata table
----@field originalFonts table
----@field ApplyFont fun(self: Fontmancer, fontName: string, font: Font): nil
----@field ApplyShadowColour fun(self: Fontmancer, fontName: string, font: Font, shouldRevert?: boolean): nil
----@field ApplyShadowOffset fun(self: Fontmancer, fontName: string, font: Font): nil
----@field ApplySpacing fun(self: Fontmancer, fontName: string, font: Font): nil
----@field ApplyTextColour fun(self: Fontmancer, fontName: string, font: Font, shouldRevert?: boolean): nil
+---@field originalValues table
+---@field ApplyFont fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
+---@field ApplyShadowColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
+---@field ApplyShadowOffset fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
+---@field ApplySpacing fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
+---@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
 ---@field ReplaceAllFonts fun(self: Fontmancer, revertingFunction?: function): nil
----@field ReplaceFont fun(self: Fontmancer, fontName: string, revertingFunction?: function): nil
----@field StoreOriginals fun(self: Fontmancer, fontName: string, font: Font): nil
+---@field ReplaceFont fun(self: Fontmancer, name: string, revertingFunction?: function): nil
+---@field StoreOriginals fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
 -- Defined in Options.lua
 ---@field settingsCategory string
 ---@field CreateOptionsPanel fun(self: Fontmancer): nil

@@ -1,63 +1,70 @@
 local addonName, addonTable = ...
 
 -- Callbacks are here to:
--- 1. Handle fonts added after the initial run
--- 2. Handle updates to already processed fonts; we don't want said updates to override our customisation
+-- 1. Handle font instances added after the initial run
+-- 2. Handle updates to already processed font instances; we don't want said updates to override our customisation
 function addonTable:HookCallbacks()
     local fontMeta = getmetatable(CreateFont("FontmancerHookFont")).__index
+    local fontStringMeta = getmetatable(UIParent:CreateFontString()).__index
 
-    local function hook(method, handler)
-        hooksecurefunc(fontMeta, method, function(fontInstance, ...)
-            local fontName = fontInstance:GetName()
-            if not fontName or self.isUpdating then return end
-            if not self.originalFonts[fontName] then self:StoreOriginals(fontName, fontInstance) end
+    local function HookCallback(method, handler)
+        local function PostHook(fontInstance, ...)
+            if self.isUpdating then return end
+
+            local fontName = fontInstance:GetName() or fontInstance:GetDebugName() or "Anonymous"
+            if not self.originalValues[fontName] then
+                self:StoreOriginals(fontName, fontInstance)
+            end
             handler(fontName, fontInstance, ...)
-        end)
+        end
+
+        hooksecurefunc(fontMeta, method, PostHook)
+        hooksecurefunc(fontStringMeta, method, PostHook)
     end
 
-    hook("SetFont", function(name, font, fontFile, height, flags)
-        self.originalFonts[name].height = height
-        self.originalFonts[name].flags = flags or self.originalFonts[name].flags or ""
-        self:ApplyFont(name, font)
+    HookCallback("SetFont", function(name, fontInstance, fontFile, height, flags)
+        self.originalValues[name].height = height
+        self.originalValues[name].flags = flags or self.originalValues[name].flags or ""
+        self:ApplyFont(name, fontInstance)
     end)
 
-    hook("SetFontHeight", function(name, font, height)
-        self.originalFonts[name].height = height
-        self:ApplyFont(name, font)
+    HookCallback("SetFontHeight", function(name, fontInstance, height)
+        self.originalValues[name].height = height
+        self:ApplyFont(name, fontInstance)
     end)
 
-    hook("SetSpacing", function(name, font, spacing)
-        self.originalFonts[name].offsets.spacing = spacing
-        self:ApplySpacing(name, font)
+    HookCallback("SetSpacing", function(name, fontInstance, spacing)
+        self.originalValues[name].offsets.spacing = spacing
+        self:ApplySpacing(name, fontInstance)
     end)
 
-    hook("SetTextColor", function(name, font, r, g, b, a)
-        self.originalFonts[name].colours.text = {
+    HookCallback("SetTextColor", function(name, fontInstance, r, g, b, a)
+        self.originalValues[name].colours.text = {
             r = r,
             g = g,
             b = b,
-            a = a or self.originalFonts[name].colours.text.a or 1
+            a = a or self.originalValues[name].colours.text.a or 1
         }
-        self:ApplyTextColour(name, font)
+        self:ApplyTextColour(name, fontInstance)
     end)
 
-    hook("SetAlpha", function(name, font, alpha)
-        self.originalFonts[name].colours.text.a = alpha
-        self:ApplyTextColour(name, font)
+    HookCallback("SetAlpha", function(name, fontInstance, alpha)
+        self.originalValues[name].colours.text.a = alpha
+        self:ApplyTextColour(name, fontInstance)
     end)
 
-    hook("SetShadowColor", function(name, font, r, g, b, a)
-        self.originalFonts[name].colours.shadow = {
+    HookCallback("SetShadowColor", function(name, fontInstance, r, g, b, a)
+        self.originalValues[name].colours.shadow = {
             r = r,
             g = g,
             b = b,
-            a = a or self.originalFonts[name].colours.shadow.a or 1
+            a = a or self.originalValues[name].colours.shadow.a or 1
         }
-        self:ApplyShadowColour(name, font)
+        self:ApplyShadowColour(name, fontInstance)
     end)
 
-    hook("SetShadowOffset", function(name, font, x, y)
-        self.originalFonts[name].offsets.shadow = { x = x, y = y }
-        self:ApplyShadowOffset(name, font)
+    HookCallback("SetShadowOffset", function(name, fontInstance, x, y)
+        self.originalValues[name].offsets.shadow = { x = x, y = y }
+        self:ApplyShadowOffset(name, fontInstance)
     end)
 end

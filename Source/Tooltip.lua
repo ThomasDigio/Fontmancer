@@ -122,17 +122,19 @@ function addonTable:CreateComparisonTooltip()
         row.statusIcon = statusIcon
 
         -- Reset Button (Edit Mode)
-        local resetBtn = CreateFrame("Button", nil, row)
-        resetBtn:SetSize(16, 16)
-        resetBtn:SetNormalAtlas("transmog-icon-remove")
-        resetBtn:SetPoint("RIGHT", 0, 0)
-        resetBtn:SetScript("OnEnter", function(self)
+        local resetButton = CreateFrame("Button", nil, row)
+        resetButton:SetSize(16, 16)
+        resetButton:SetNormalAtlas("transmog-icon-remove")
+        resetButton:SetHighlightAtlas("transmog-icon-remove")
+        resetButton:GetHighlightTexture():SetAlpha(0.5)
+        resetButton:SetPoint("RIGHT", 0, 0)
+        resetButton:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Reset to global settings")
             GameTooltip:Show()
         end)
-        resetBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        row.resetBtn = resetBtn
+        resetButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        row.resetBtn = resetButton
 
         -- Editor Container (Edit Mode)
         local editorFrame = CreateFrame("Frame", nil, row)
@@ -227,7 +229,7 @@ function addonTable:ShowComparison(anchorFrame, fontName)
     content.title:SetText(fontName)
     content.subTitle:SetText("|cffffffffOriginal|r |cffFFD100/|r |cff00ccffGlobal|r |cffFFD100/|r |cff00ff00Override|r")
 
-    local original = self.originalFonts[fontName]
+    local original = self.originalValues[fontName]
     local fontObj = _G[fontName]
     local specific = self.db.specific[fontName]
     local disabled = specific and specific.disabled or {}

@@ -139,10 +139,9 @@ function addonTable:CreateSlider(name, label, parent, minVal, maxVal, step, dbTa
     return slider
 end
 
-function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffset, yOffset, callbackFunc)
+function addonTable:CreateColourPicker(label, parent, dbTable, callbackFunc)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(200, 30)
-    frame:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", xOffset, yOffset)
 
     local checkbox = self:CreateCheckbox("Override " .. label .. " colour", nil, frame)
     checkbox:SetPoint("LEFT", 0, 0)
@@ -153,7 +152,7 @@ function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffs
         if dbTable.isEnabled then
             addonTable:ReplaceAllFonts()
         else
-            addonTable:ReplaceAllFonts(callbackFunc)
+            addonTable:Revert(callbackFunc)
         end
     end)
 
@@ -193,6 +192,7 @@ function addonTable:CreateColourPicker(label, parent, dbTable, relativeTo, xOffs
             end
         })
     end)
+    return frame
 end
 
 function addonTable:CreateReloadButton(parent, relativeTo, xOffset, yOffset, callback)
@@ -200,6 +200,8 @@ function addonTable:CreateReloadButton(parent, relativeTo, xOffset, yOffset, cal
     reloadButton:SetSize(15, 15)
     reloadButton:SetPoint("LEFT", relativeTo, "RIGHT", xOffset, yOffset)
     reloadButton:SetNormalAtlas("UI-RefreshButton")
+    reloadButton:SetHighlightAtlas("UI-RefreshButton")
+    reloadButton:GetHighlightTexture():SetAlpha(0.5)
 
     local buttonTexture = reloadButton:GetNormalTexture()
 
@@ -308,4 +310,39 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
 
         rootDescription:SetScrollMode(300) -- Needs to be done last
     end)
+end
+
+function addonTable:CreateFadeTooltip(parent)
+    local tooltip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    tooltip:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    tooltip:SetBackdropColor(0.08, 0.08, 0.1, 0.9)
+    tooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+    tooltip:SetFrameStrata("TOOLTIP")
+    tooltip:Hide()
+
+    tooltip.text = tooltip:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    tooltip.text:SetPoint("TOPLEFT", 10, -10)
+    tooltip.text:SetPoint("BOTTOMRIGHT", -10, 10)
+    tooltip.text:SetJustifyH("CENTER")
+
+    function tooltip:ShowMessage(owner, text)
+        self:SetPoint("BOTTOM", owner, "TOP", 0, 5)
+        self.text:SetText(text)
+        -- Dynamic width based on text, capped at half screen width
+        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20))
+        self:SetHeight(self.text:GetStringHeight() + 20)
+
+        UIFrameFadeIn(self, 0.2, 0, 1)
+    end
+
+    function tooltip:HideMessage()
+        UIFrameFadeOut(self, 0.2, self:GetAlpha(), 0)
+    end
+
+    return tooltip
 end

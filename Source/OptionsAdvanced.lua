@@ -127,7 +127,7 @@ function addonTable:CreateAdvancedOptionsPanel()
 
         local search = searchBox:GetText():lower()
         local keys = {}
-        for k in pairs(self.originalFonts) do
+        for k in pairs(self.originalValues) do
             -- Filter out dynamic instances without names because there's no point storing overrides for them
             if (search == "" or k:lower():find(search)) and not k:lower():find("^table:") then
                 table.insert(keys, k)

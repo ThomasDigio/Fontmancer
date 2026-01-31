@@ -6,7 +6,7 @@ addonTable.metadata = {
     LOGO_PATH = "IconTexture",
     DESCRIPTION = "Notes"
 }
-addonTable.originalFonts = {}
+addonTable.originalValues = {}
 addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
 -- Does not contain flags (need special handling because of possible nil values)
 addonTable.databaseDefaults = {
@@ -83,53 +83,59 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         addonTable:HookCallbacks()
 
         addonTable:CreateOptionsPanel()
-        -- addonTable:CreateAdvancedOptionsPanel()
+        addonTable:CreateAdvancedOptionsPanel()
     end
 end)
 
-function addonTable:ReplaceAllFonts(revertingFunction)
+function addonTable:ReplaceAllFonts()
     local fonts = GetFonts()
 
-    if not revertingFunction then
-        for _, fontName in ipairs(fonts) do
-            local font = _G[fontName]
-            if font then
-                self:StoreOriginals(fontName, font)
-            end
+    for _, fontName in ipairs(fonts) do
+        local font = _G[fontName]
+        if font then
+            self:StoreOriginals(fontName, font)
         end
     end
 
     for _, fontName in ipairs(fonts) do
-        self:ReplaceFont(fontName, revertingFunction)
+        self:ReplaceFont(fontName)
     end
 end
 
-function addonTable:ReplaceFont(fontName, revertingFunction)
-    local font = _G[fontName]
-    local isExcluded = self.db.excludeNameplates and string.find(fontName:lower(), "nameplate")
+function addonTable:Revert(revertingFunction)
+    for name, _ in pairs(self.originalValues) do
+        if name ~= "Anonymous" then
+            self:ReplaceFont(name, revertingFunction)
+        end
+    end
+end
+
+function addonTable:ReplaceFont(name, revertingFunction)
+    local font = _G[name]
+    local isExcluded = self.db.excludeNameplates and string.find(name:lower(), "nameplate")
     if not font or isExcluded then return end
 
     if revertingFunction then
-        revertingFunction(self, fontName, font, true)
+        revertingFunction(self, name, font, true)
     else
-        self:StoreOriginals(fontName, font)
-        self:ApplyFont(fontName, font)
-        self:ApplySpacing(fontName, font)
-        self:ApplyTextColour(fontName, font)
-        self:ApplyShadowColour(fontName, font)
-        self:ApplyShadowOffset(fontName, font)
+        self:StoreOriginals(name, font)
+        self:ApplyFont(name, font)
+        self:ApplySpacing(name, font)
+        self:ApplyTextColour(name, font)
+        self:ApplyShadowColour(name, font)
+        self:ApplyShadowOffset(name, font)
     end
 end
 
-function addonTable:StoreOriginals(fontName, font)
-    if self.originalFonts[fontName] then return end
+function addonTable:StoreOriginals(name, fontInstance)
+    if self.originalValues[name] then return end
 
-    local fontFile, height, flags = font:GetFont()
-    local textRed, textGreen, textBlue, textAlpha = font:GetTextColor()
-    local shadowRed, shadowGreen, shadowBlue, shadowAlpha = font:GetShadowColor()
-    local shadowX, shadowY = font:GetShadowOffset()
+    local fontFile, height, flags = fontInstance:GetFont()
+    local textRed, textGreen, textBlue, textAlpha = fontInstance:GetTextColor()
+    local shadowRed, shadowGreen, shadowBlue, shadowAlpha = fontInstance:GetShadowColor()
+    local shadowX, shadowY = fontInstance:GetShadowOffset()
 
-    self.originalFonts[fontName] = {
+    self.originalValues[name] = {
         file = fontFile,
         colours = {
             text = { r = textRed, g = textGreen, b = textBlue, a = textAlpha },
@@ -139,23 +145,23 @@ function addonTable:StoreOriginals(fontName, font)
         height = height,
         offsets = {
             shadow = { x = shadowX, y = shadowY },
-            spacing = font:GetSpacing()
+            spacing = fontInstance:GetSpacing()
         }
     }
 end
 
-function addonTable:ApplyFont(fontName, font)
+function addonTable:ApplyFont(name, fontInstance)
     local selectedFont = self.db.selectedFont
     if not selectedFont then return end
 
-    local specific = self.db.specific[fontName]
+    local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
     -- Determine Font File
     -- If disabled, revert to original file. If specific, use specific. Else use global.
     local fontToUse
     if disabled.font then
-        fontToUse = self.originalFonts[fontName].file
+        fontToUse = self.originalValues[name].file
     elseif specific and specific.font then
         fontToUse = LSM:Fetch(LSM.MediaType.FONT, specific.font)
     else
@@ -165,22 +171,22 @@ function addonTable:ApplyFont(fontName, font)
     -- Height
     local newHeight
     if disabled.height then
-        newHeight = self.originalFonts[fontName].height
+        newHeight = self.originalValues[name].height
     elseif specific and specific.height then
         newHeight = specific.height
     else
-        newHeight = math.max(self.originalFonts[fontName].height + self.db.offsets.height, 0.5)
+        newHeight = math.max(self.originalValues[name].height + self.db.offsets.height, 0.5)
     end
 
     -- Flags
     local newFlags
     if disabled.flags then
-        newFlags = self.originalFonts[fontName].flags
+        newFlags = self.originalValues[name].flags
     elseif specific and specific.flags then
         newFlags = specific.flags
     else
         local activeFlags = {}
-        local originalFlags = self.originalFonts[fontName].flags or ""
+        local originalFlags = self.originalValues[name].flags or ""
 
         -- Parse original flags into a set
         for flag in string.gmatch(originalFlags, "[^,]+") do
@@ -211,71 +217,71 @@ function addonTable:ApplyFont(fontName, font)
     end
 
     self.isUpdating = true
-    font:SetFont(fontToUse, newHeight, newFlags)
+    fontInstance:SetFont(fontToUse, newHeight, newFlags)
     self.isUpdating = false
 end
 
-function addonTable:ApplySpacing(fontName, font)
-    local specific = self.db.specific[fontName]
+function addonTable:ApplySpacing(name, fontInstance)
+    local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
     local spacing
 
     if disabled.spacing then
-        spacing = self.originalFonts[fontName].offsets.spacing
+        spacing = self.originalValues[name].offsets.spacing
     elseif specific and specific.spacing then
         spacing = specific.spacing
     else
-        spacing = self.originalFonts[fontName].offsets.spacing + self.db.offsets.spacing
+        spacing = self.originalValues[name].offsets.spacing + self.db.offsets.spacing
     end
 
     self.isUpdating = true
-    font:SetSpacing(spacing)
+    fontInstance:SetSpacing(spacing)
     self.isUpdating = false
 end
 
-function addonTable:ApplyTextColour(fontName, font, shouldRevert)
+function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
     local colourSettings = self.db.colours.text
-    local specific = self.db.specific[fontName]
+    local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
     self.isUpdating = true
     if shouldRevert or disabled.text then
-        local originalColour = self.originalFonts[fontName].colours.text
-        font:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        local originalColour = self.originalValues[name].colours.text
+        fontInstance:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif specific and specific.text then
         local s = specific.text
-        font:SetTextColor(s.r, s.g, s.b, s.a)
+        fontInstance:SetTextColor(s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        local originalAlpha = self.originalFonts[fontName].colours.text.a or 1
+        local originalAlpha = self.originalValues[name].colours.text.a or 1
         local finalAlpha = math.min(colourSettings.a, originalAlpha)
-        font:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
     end
     self.isUpdating = false
 end
 
-function addonTable:ApplyShadowColour(fontName, font, shouldRevert)
+function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
     local colourSettings = self.db.colours.shadow
-    local specific = self.db.specific[fontName]
+    local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
     self.isUpdating = true
     if shouldRevert or disabled.shadow then
-        local originalColour = self.originalFonts[fontName].colours.shadow
-        font:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        local originalColour = self.originalValues[name].colours.shadow
+        fontInstance:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif specific and specific.shadow then
         local s = specific.shadow
-        font:SetShadowColor(s.r, s.g, s.b, s.a)
+        fontInstance:SetShadowColor(s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        local originalAlpha = self.originalFonts[fontName].colours.shadow.a or 1
+        local originalAlpha = self.originalValues[name].colours.shadow.a or 1
         local finalAlpha = math.min(colourSettings.a, originalAlpha)
-        font:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
     end
     self.isUpdating = false
 end
 
-function addonTable:ApplyShadowOffset(fontName, font)
-    local original = self.originalFonts[fontName]
-    local specific = self.db.specific[fontName]
+function addonTable:ApplyShadowOffset(name, fontInstance)
+    local original = self.originalValues[name]
+    local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
     local newX, newY
@@ -296,6 +302,6 @@ function addonTable:ApplyShadowOffset(fontName, font)
     end
 
     self.isUpdating = true
-    font:SetShadowOffset(newX, newY)
+    fontInstance:SetShadowOffset(newX, newY)
     self.isUpdating = false
 end
