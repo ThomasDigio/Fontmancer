@@ -1,9 +1,9 @@
 local addonName, addonTable = ...
 
-function addonTable:CreateAdvancedOptionsPanel()
+function addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
     local panel = CreateFrame("Frame", addonName .. "AdvancedPanel")
     panel.name = "Advanced"
-    local logo = self:CreatePanelHeader(panel)
+    local logo = self:CreatePanelHeader(panel, fadeTooltip)
 
     local header = self:CreateSectionHeader(panel, "Fonts", logo)
 

@@ -80,15 +80,16 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         addonTable.initiallySelectedFont = addonTable.db.selectedFont
         addonTable.initialExcludeNameplates = addonTable.db.excludeNameplates
     elseif event == "PLAYER_LOGIN" then
-        addonTable:CreateOptionsPanel()
-        addonTable:CreateAdvancedOptionsPanel()
+        local fadeTooltip = addonTable:CreateFadeTooltip()
+        addonTable:CreateOptionsPanel(fadeTooltip)
+        addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
 
         -- Apply settings to all fonts
         local fonts = GetFonts()
 
         for _, fontName in ipairs(fonts) do
             local font = _G[fontName]
-            if font and not addonTable.originalValues[fontName] then
+            if font then
                 addonTable:StoreOriginals(fontName, font)
             end
         end
@@ -109,14 +110,14 @@ function addonTable:UpdateAllStoredInstances(revertingFunction)
 end
 
 function addonTable:UpdateInstance(name, revertingFunction)
-    local fontInstance = _G[name]
+    local fontInstance = self.originalValues[name].instance
     local isExcluded = self.db.excludeNameplates and string.find(name:lower(), "nameplate")
     if not fontInstance or isExcluded then return end
 
     if revertingFunction then
         revertingFunction(self, name, fontInstance, true)
     else
-        if not self.originalValues[name] then self:StoreOriginals(name, fontInstance) end
+        self:StoreOriginals(name, fontInstance)
         self:ApplyFont(name, fontInstance)
         self:ApplySpacing(name, fontInstance)
         self:ApplyTextColour(name, fontInstance)
@@ -126,12 +127,15 @@ function addonTable:UpdateInstance(name, revertingFunction)
 end
 
 function addonTable:StoreOriginals(name, fontInstance)
+    if self.originalValues[name] then return end
+
     local fontFile, height, flags = fontInstance:GetFont()
     local textRed, textGreen, textBlue, textAlpha = fontInstance:GetTextColor()
     local shadowRed, shadowGreen, shadowBlue, shadowAlpha = fontInstance:GetShadowColor()
     local shadowX, shadowY = fontInstance:GetShadowOffset()
 
     self.originalValues[name] = {
+        instance = fontInstance,
         file = fontFile,
         colours = {
             text = { r = textRed, g = textGreen, b = textBlue, a = textAlpha },
@@ -153,8 +157,7 @@ function addonTable:ApplyFont(name, fontInstance)
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
-    -- Determine Font File
-    -- If disabled, revert to original file. If specific, use specific. Else use global.
+    -- Font
     local fontToUse
     if disabled.font then
         fontToUse = self.originalValues[name].file

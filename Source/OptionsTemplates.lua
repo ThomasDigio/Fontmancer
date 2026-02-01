@@ -1,7 +1,42 @@
 local addonName, addonTable = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 
-function addonTable:CreatePanelHeader(panel)
+function addonTable:CreateFadeTooltip()
+    local tooltip = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    tooltip:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    tooltip:SetBackdropColor(0.08, 0.08, 0.1, 0.9)
+    tooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+    tooltip:SetFrameStrata("TOOLTIP")
+    tooltip:Hide()
+
+    tooltip.text = tooltip:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    tooltip.text:SetPoint("TOPLEFT", 10, -10)
+    tooltip.text:SetPoint("BOTTOMRIGHT", -10, 10)
+    tooltip.text:SetJustifyH("CENTER")
+
+    function tooltip:ShowMessage(owner, text)
+        self:SetPoint("BOTTOM", owner, "TOP", 0, 5)
+        self.text:SetText(text)
+        -- Dynamic width based on text, capped at half screen width
+        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20))
+        self:SetHeight(self.text:GetStringHeight() + 20)
+
+        UIFrameFadeIn(self, 0.2, 0, 1)
+    end
+
+    function tooltip:HideMessage()
+        UIFrameFadeOut(self, 0.2, self:GetAlpha(), 0)
+    end
+
+    return tooltip
+end
+
+function addonTable:CreatePanelHeader(panel, fadeTooltip)
     local logo = panel:CreateTexture(nil, "ARTWORK")
     logo:SetSize(25, 25)
     logo:SetPoint("TOPLEFT", 15, -15)
@@ -12,6 +47,19 @@ function addonTable:CreatePanelHeader(panel)
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     description:SetPoint("LEFT", title, "RIGHT", 20, 0)
     description:SetText(self.metadata.DESCRIPTION)
+
+    local helpBtn = CreateFrame("Button", nil, panel)
+    helpBtn:SetSize(30, 30)
+    helpBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -15, -12)
+    helpBtn:SetNormalTexture("Interface\\common\\help-i")
+    helpBtn:SetHighlightTexture("Interface\\common\\help-i")
+    helpBtn:GetHighlightTexture():SetAlpha(0.5)
+    helpBtn:SetScript("OnEnter", function(self)
+        fadeTooltip:ShowMessage(self,
+            "Sometimes the rendered fonts can get into a weird state after changing settings. If that happens, try reloading your UI.")
+    end)
+    helpBtn:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
+
     return logo
 end
 
@@ -310,39 +358,4 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
 
         rootDescription:SetScrollMode(300) -- Needs to be done last
     end)
-end
-
-function addonTable:CreateFadeTooltip(parent)
-    local tooltip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    tooltip:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 }
-    })
-    tooltip:SetBackdropColor(0.08, 0.08, 0.1, 0.9)
-    tooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-    tooltip:SetFrameStrata("TOOLTIP")
-    tooltip:Hide()
-
-    tooltip.text = tooltip:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    tooltip.text:SetPoint("TOPLEFT", 10, -10)
-    tooltip.text:SetPoint("BOTTOMRIGHT", -10, 10)
-    tooltip.text:SetJustifyH("CENTER")
-
-    function tooltip:ShowMessage(owner, text)
-        self:SetPoint("BOTTOM", owner, "TOP", 0, 5)
-        self.text:SetText(text)
-        -- Dynamic width based on text, capped at half screen width
-        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20))
-        self:SetHeight(self.text:GetStringHeight() + 20)
-
-        UIFrameFadeIn(self, 0.2, 0, 1)
-    end
-
-    function tooltip:HideMessage()
-        UIFrameFadeOut(self, 0.2, self:GetAlpha(), 0)
-    end
-
-    return tooltip
 end

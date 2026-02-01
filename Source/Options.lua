@@ -1,10 +1,8 @@
 local addonName, addonTable = ...
 
-function addonTable:CreateOptionsPanel()
+function addonTable:CreateOptionsPanel(fadeTooltip)
     local panel = CreateFrame("Frame", addonName .. "OptionsPanel")
-    local logo = self:CreatePanelHeader(panel)
-
-    local fadeTooltip = self:CreateFadeTooltip(UIParent)
+    local logo = self:CreatePanelHeader(panel, fadeTooltip)
 
     local fontHeader = self:CreateSectionHeader(panel, "Font", logo)
     local warningIcon = panel:CreateTexture(nil, "ARTWORK")
@@ -43,7 +41,7 @@ function addonTable:CreateOptionsPanel()
     local reloadButton = self:CreateReloadButton(panel, nameplateCheckbox.text, 10, 0, C_UI.Reload)
     reloadButton:Hide()
     reloadButton:HookScript("OnEnter", function(self)
-        fadeTooltip:ShowMessage(self, "You will need to reload your UI for that option to take effect!")
+        fadeTooltip:ShowMessage(self, "Reloading your UI is necessary for that setting to take effect")
     end)
     reloadButton:HookScript("OnLeave", function()
         fadeTooltip:HideMessage()
