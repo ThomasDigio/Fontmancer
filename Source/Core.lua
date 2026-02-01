@@ -82,7 +82,7 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "PLAYER_LOGIN" then
         local fadeTooltip = addonTable:CreateFadeTooltip()
         addonTable:CreateOptionsPanel(fadeTooltip)
-        addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
+        -- addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
 
         -- Apply settings to all fonts
         local fonts = GetFonts()
