@@ -17,10 +17,10 @@
 ---@field ApplyShadowColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
 ---@field ApplyShadowOffset fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
 ---@field ApplySpacing fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
----@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
----@field ReplaceAllFonts fun(self: Fontmancer, revertingFunction?: function): nil
----@field ReplaceFont fun(self: Fontmancer, name: string, revertingFunction?: function): nil
 ---@field StoreOriginals fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
+---@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
+---@field UpdateAllStoredInstances fun(self: Fontmancer, revertingFunction?: function): nil
+---@field UpdateInstance fun(self: Fontmancer, name: string, revertingFunction?: function): nil
 -- Defined in Options.lua
 ---@field settingsCategory string
 ---@field CreateOptionsPanel fun(self: Fontmancer): nil

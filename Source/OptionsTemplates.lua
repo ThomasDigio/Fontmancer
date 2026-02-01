@@ -98,7 +98,7 @@ function addonTable:CreateTriStateCheckbox(label, key, parent, descriptionFrame,
             addonTable.db.flags[key] = false
         end
         UpdateVisuals()
-        addonTable:ReplaceAllFonts()
+        addonTable:UpdateAllStoredInstances()
         button:GetScript("OnEnter")(button)
     end)
 
@@ -133,7 +133,7 @@ function addonTable:CreateSlider(name, label, parent, minVal, maxVal, step, dbTa
     slider:RegisterCallback("OnValueChanged", function(self, value)
         dbTable[dbKey] = value
         UpdateText(value)
-        addonTable:ReplaceAllFonts()
+        addonTable:UpdateAllStoredInstances()
     end)
 
     return slider
@@ -150,9 +150,9 @@ function addonTable:CreateColourPicker(label, parent, dbTable, callbackFunc)
         dbTable.isEnabled = self:GetChecked()
 
         if dbTable.isEnabled then
-            addonTable:ReplaceAllFonts()
+            addonTable:UpdateAllStoredInstances()
         else
-            addonTable:Revert(callbackFunc)
+            addonTable:UpdateAllStoredInstances(callbackFunc)
         end
     end)
 
@@ -174,7 +174,7 @@ function addonTable:CreateColourPicker(label, parent, dbTable, callbackFunc)
             dbTable.r, dbTable.g, dbTable.b, dbTable.a = r, g, b, a
             swatch.bg:SetColorTexture(r, g, b)
 
-            if dbTable.isEnabled then addonTable:ReplaceAllFonts() end
+            if dbTable.isEnabled then addonTable:UpdateAllStoredInstances() end
         end
 
         ColorPickerFrame:SetupColorPickerAndShow({
@@ -188,7 +188,7 @@ function addonTable:CreateColourPicker(label, parent, dbTable, callbackFunc)
             cancelFunc = function()
                 dbTable.r, dbTable.g, dbTable.b, dbTable.a = oldR, oldG, oldB, oldA
                 swatch.bg:SetColorTexture(oldR, oldG, oldB)
-                if dbTable.isEnabled then addonTable:ReplaceAllFonts() end
+                if dbTable.isEnabled then addonTable:UpdateAllStoredInstances() end
             end
         })
     end)

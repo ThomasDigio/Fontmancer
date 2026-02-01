@@ -11,10 +11,8 @@ function addonTable:HookCallbacks()
         local function PostHook(fontInstance, ...)
             if self.isUpdating then return end
 
-            local fontName = fontInstance:GetName() or fontInstance:GetDebugName() or "Anonymous"
-            if not self.originalValues[fontName] then
-                self:StoreOriginals(fontName, fontInstance)
-            end
+            local fontName = fontInstance:GetName() or fontInstance:GetDebugName()
+            self:StoreOriginals(fontName, fontInstance)
             handler(fontName, fontInstance, ...)
         end
 

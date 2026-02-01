@@ -6,20 +6,21 @@ addonTable.metadata = {
     LOGO_PATH = "IconTexture",
     DESCRIPTION = "Notes"
 }
-addonTable.originalValues = {}
-addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
--- Does not contain flags (need special handling because of possible nil values)
 addonTable.databaseDefaults = {
     selectedFont = nil,
     excludeNameplates = false,
+    -- Flags would be here, but purposefully missing (need special handling because of possible nil values)
+    excludeFlagsDarkText = true,
     offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
     colours = {
         text = { isEnabled = false, r = 215 / 255, g = 151 / 255, b = 67 / 255, a = 1 },
         shadow = { isEnabled = false, r = 0, g = 0, b = 0, a = 1 }
     },
     forceIndent = false,
-    specific = {} -- Stores per-font overrides
+    specific = {}             -- Stores per-font overrides
 }
+addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
+addonTable.originalValues = {}
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
@@ -79,57 +80,52 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         addonTable.initiallySelectedFont = addonTable.db.selectedFont
         addonTable.initialExcludeNameplates = addonTable.db.excludeNameplates
     elseif event == "PLAYER_LOGIN" then
-        addonTable:ReplaceAllFonts()
-        addonTable:HookCallbacks()
-
         addonTable:CreateOptionsPanel()
         addonTable:CreateAdvancedOptionsPanel()
+
+        -- Apply settings to all fonts
+        local fonts = GetFonts()
+
+        for _, fontName in ipairs(fonts) do
+            local font = _G[fontName]
+            if font and not addonTable.originalValues[fontName] then
+                addonTable:StoreOriginals(fontName, font)
+            end
+        end
+
+        for _, fontName in ipairs(fonts) do
+            addonTable:UpdateInstance(fontName)
+        end
+
+        -- Setup the hooks for updates during session
+        addonTable:HookCallbacks()
     end
 end)
 
-function addonTable:ReplaceAllFonts()
-    local fonts = GetFonts()
-
-    for _, fontName in ipairs(fonts) do
-        local font = _G[fontName]
-        if font then
-            self:StoreOriginals(fontName, font)
-        end
-    end
-
-    for _, fontName in ipairs(fonts) do
-        self:ReplaceFont(fontName)
-    end
-end
-
-function addonTable:Revert(revertingFunction)
+function addonTable:UpdateAllStoredInstances(revertingFunction)
     for name, _ in pairs(self.originalValues) do
-        if name ~= "Anonymous" then
-            self:ReplaceFont(name, revertingFunction)
-        end
+        self:UpdateInstance(name, revertingFunction)
     end
 end
 
-function addonTable:ReplaceFont(name, revertingFunction)
-    local font = _G[name]
+function addonTable:UpdateInstance(name, revertingFunction)
+    local fontInstance = _G[name]
     local isExcluded = self.db.excludeNameplates and string.find(name:lower(), "nameplate")
-    if not font or isExcluded then return end
+    if not fontInstance or isExcluded then return end
 
     if revertingFunction then
-        revertingFunction(self, name, font, true)
+        revertingFunction(self, name, fontInstance, true)
     else
-        self:StoreOriginals(name, font)
-        self:ApplyFont(name, font)
-        self:ApplySpacing(name, font)
-        self:ApplyTextColour(name, font)
-        self:ApplyShadowColour(name, font)
-        self:ApplyShadowOffset(name, font)
+        if not self.originalValues[name] then self:StoreOriginals(name, fontInstance) end
+        self:ApplyFont(name, fontInstance)
+        self:ApplySpacing(name, fontInstance)
+        self:ApplyTextColour(name, fontInstance)
+        self:ApplyShadowColour(name, fontInstance)
+        self:ApplyShadowOffset(name, fontInstance)
     end
 end
 
 function addonTable:StoreOriginals(name, fontInstance)
-    if self.originalValues[name] then return end
-
     local fontFile, height, flags = fontInstance:GetFont()
     local textRed, textGreen, textBlue, textAlpha = fontInstance:GetTextColor()
     local shadowRed, shadowGreen, shadowBlue, shadowAlpha = fontInstance:GetShadowColor()
@@ -207,6 +203,18 @@ function addonTable:ApplyFont(name, fontInstance)
             end
         end
 
+        -- Outlines exclusions
+        if self.db.excludeFlagsDarkText then
+            local r, g, b = fontInstance:GetTextColor()
+            if canaccessvalue(r) and canaccessvalue(g) and canaccessvalue(b) then
+                local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
+                if luminance < 0.2 then
+                    activeFlags["OUTLINE"] = nil
+                    activeFlags["THICKOUTLINE"] = nil
+                end
+            end
+        end
+
         -- Rebuild the comma-separated string
         local newFlagsSplit = {}
         for flag in pairs(activeFlags) do
@@ -252,11 +260,20 @@ function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
         local s = specific.text
         fontInstance:SetTextColor(s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        local originalAlpha = self.originalValues[name].colours.text.a or 1
-        local finalAlpha = math.min(colourSettings.a, originalAlpha)
-        fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        if canaccessvalue(self.originalValues[name].colours.text.a) then
+            local originalAlpha = self.originalValues[name].colours.text.a or 1
+            local finalAlpha = math.min(colourSettings.a, originalAlpha)
+            fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        else
+            fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+        end
     end
     self.isUpdating = false
+
+    -- This ensures that if a FontString becomes dark, the outline is removed
+    if self.db.excludeFlagsDarkText then
+        self:ApplyFont(name, fontInstance)
+    end
 end
 
 function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
@@ -272,9 +289,13 @@ function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
         local s = specific.shadow
         fontInstance:SetShadowColor(s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        local originalAlpha = self.originalValues[name].colours.shadow.a or 1
-        local finalAlpha = math.min(colourSettings.a, originalAlpha)
-        fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        if canaccessvalue(self.originalValues[name].colours.shadow.a) then
+            local originalAlpha = self.originalValues[name].colours.shadow.a or 1
+            local finalAlpha = math.min(colourSettings.a, originalAlpha)
+            fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+        else
+            fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+        end
     end
     self.isUpdating = false
 end

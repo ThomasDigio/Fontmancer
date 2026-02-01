@@ -5,13 +5,13 @@ function addonTable:CreateAdvancedOptionsPanel()
     panel.name = "Advanced"
     local logo = self:CreatePanelHeader(panel)
 
-    local header = self:CreateSectionHeader(panel, "Font instances", logo)
+    local header = self:CreateSectionHeader(panel, "Fonts", logo)
 
     local searchBox = CreateFrame("EditBox", nil, panel, "SearchBoxTemplate")
     searchBox:SetSize(400, 22)
     searchBox:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 5, -15)
     searchBox:SetAutoFocus(false)
-    searchBox.Instructions:SetText("Search for a specific font instance")
+    searchBox.Instructions:SetText("Search for a specific game font")
 
     local UpdateList
     self:CreateReloadButton(panel, searchBox, 10, 0, function() UpdateList() end)

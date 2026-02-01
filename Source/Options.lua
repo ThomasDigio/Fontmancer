@@ -25,7 +25,7 @@ function addonTable:CreateOptionsPanel()
         function() return addonTable.db.selectedFont end,
         function(val)
             addonTable.db.selectedFont = val
-            addonTable:ReplaceAllFonts()
+            addonTable:UpdateAllStoredInstances()
 
             -- Show the warning when we change the font
             if self.db.selectedFont ~= self.initiallySelectedFont then
@@ -43,7 +43,7 @@ function addonTable:CreateOptionsPanel()
     local reloadButton = self:CreateReloadButton(panel, nameplateCheckbox.text, 10, 0, C_UI.Reload)
     reloadButton:Hide()
     reloadButton:HookScript("OnEnter", function(self)
-        fadeTooltip:ShowMessage(self, "|cffff9900You will need to reload your UI for that option to take effect!|r")
+        fadeTooltip:ShowMessage(self, "You will need to reload your UI for that option to take effect!")
     end)
     reloadButton:HookScript("OnLeave", function()
         fadeTooltip:HideMessage()
@@ -59,7 +59,7 @@ function addonTable:CreateOptionsPanel()
     end
     nameplateCheckbox:SetScript("OnClick", function(self)
         addonTable.db.excludeNameplates = self:GetChecked()
-        addonTable:ReplaceAllFonts()
+        addonTable:UpdateAllStoredInstances()
         UpdateNameplateReload()
     end)
 
@@ -72,14 +72,33 @@ function addonTable:CreateOptionsPanel()
     flagsDescription:SetAlpha(0)
     local monoCheck = self:CreateTriStateCheckbox("Monochrome", "MONOCHROME", panel, flagsDescription,
         "Renders the font without antialiasing")
-    monoCheck:SetPoint("TOPRIGHT", flagsHeader, "BOTTOM", -200, -20)
+    monoCheck:SetPoint("TOPRIGHT", flagsHeader, "BOTTOM", -180, -60)
     local outlineCheck = self:CreateTriStateCheckbox("Outline", "OUTLINE", panel, flagsDescription,
         "Renders the font with a black outline")
-    outlineCheck:SetPoint("TOP", flagsHeader, "BOTTOM", 0, -20)
+    outlineCheck:SetPoint("TOP", flagsHeader, "BOTTOM", 0, -60)
     local thickCheck = self:CreateTriStateCheckbox("Thick", "THICKOUTLINE", panel, flagsDescription,
         "Renders the font with a thick black outline")
-    thickCheck:SetPoint("TOPLEFT", flagsHeader, "BOTTOM", 150, -20)
+    thickCheck:SetPoint("TOPLEFT", flagsHeader, "BOTTOM", 130, -60)
+
     flagsDescription:SetPoint("TOP", outlineCheck, "BOTTOM", 0, -20)
+
+    local outlineBorder = panel:CreateTexture(nil, "ARTWORK")
+    outlineBorder:SetAtlas("Adventure-MissionEnd-Line")
+    outlineBorder:SetHeight(10)
+    outlineBorder:SetPoint("LEFT", outlineCheck, "TOPLEFT", -5, 10)
+    outlineBorder:SetPoint("RIGHT", thickCheck.text, "TOPRIGHT", 5, 5)
+    local excludeDarkTextCheckbox = self:CreateCheckbox("Exclude dark texts", nil, panel)
+    excludeDarkTextCheckbox:SetPoint("BOTTOM", outlineBorder, "TOP", -50, 5)
+    excludeDarkTextCheckbox:SetChecked(addonTable.db.excludeFlagsDarkText)
+    excludeDarkTextCheckbox:SetScript("OnClick", function(self)
+        addonTable.db.excludeFlagsDarkText = self:GetChecked()
+        addonTable:UpdateAllStoredInstances()
+    end)
+    excludeDarkTextCheckbox:SetScript("OnEnter", function(self)
+        fadeTooltip:ShowMessage(self,
+            "Prevents text being almost unreadable due to the outline colour being so close to the text's")
+    end)
+    excludeDarkTextCheckbox:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
 
     local offsetHeader = self:CreateSectionHeader(panel, "Offsets", flagsDescription)
     local sizeSlider = self:CreateSlider("Size", "Size", panel, -10, 10, 0.5, addonTable.db.offsets, "height", "TOPRIGHT",

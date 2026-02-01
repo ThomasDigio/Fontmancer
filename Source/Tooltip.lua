@@ -235,7 +235,7 @@ function addonTable:ShowComparison(anchorFrame, fontName)
     local disabled = specific and specific.disabled or {}
 
     local function Refresh()
-        self:ReplaceFont(fontName)
+        self:UpdateInstance(fontName)
         if self.UpdateAdvancedListIcons then self:UpdateAdvancedListIcons() end
         self:ShowComparison(anchorFrame, fontName)
     end

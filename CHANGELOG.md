@@ -1,3 +1,4 @@
 - Added setting to exclude certain texts from having new flags applied due to unreadable results
 - Fixed font dropdown not having a scrollbar
+- Text/shadow colours now apply to even more text
 - Slightly re-organised existing option panel
