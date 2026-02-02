@@ -48,17 +48,20 @@ function addonTable:CreatePanelHeader(panel, fadeTooltip)
     description:SetPoint("LEFT", title, "RIGHT", 20, 0)
     description:SetText(self.metadata.DESCRIPTION)
 
-    local helpBtn = CreateFrame("Button", nil, panel)
-    helpBtn:SetSize(30, 30)
-    helpBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -15, -12)
-    helpBtn:SetNormalTexture("Interface\\common\\help-i")
-    helpBtn:SetHighlightTexture("Interface\\common\\help-i")
-    helpBtn:GetHighlightTexture():SetAlpha(0.5)
-    helpBtn:SetScript("OnEnter", function(self)
+    local infoButton = CreateFrame("Button", nil, panel)
+    infoButton:SetSize(30, 30)
+    infoButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -15, -12)
+    infoButton:SetNormalTexture("Interface\\common\\help-i")
+    infoButton:SetHighlightTexture("Interface\\common\\help-i")
+    infoButton:GetHighlightTexture():SetAlpha(0.5)
+    infoButton:SetScript("OnEnter", function(self)
         fadeTooltip:ShowMessage(self,
-            "Sometimes the rendered fonts can get into a weird state after changing settings. If that happens, try reloading your UI.")
+            "In very specific cases, certain rendered fonts can update incorrectly after changing some of Fontmancer's settings. If that happens, reloading your UI should fix it."
+            .. "\n"
+            ..
+            "That said, weird states in a session where you have not changed settings is NOT expected. If that happens to you and you'd like to help me, report the issue using the link on CurseForge :)")
     end)
-    helpBtn:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
+    infoButton:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
 
     return logo
 end
@@ -318,7 +321,7 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
             radioButton:AddInitializer(function(button)
                 local overlay
 
-                -- We scan children to find it because 'button.overlay' references are often wiped during recycling
+                -- Look for an already created overlay in children
                 for _, child in ipairs({ button:GetChildren() }) do
                     if child.IsFontmancerPreview then
                         overlay = child
