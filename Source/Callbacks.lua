@@ -9,7 +9,7 @@ function addonTable:HookCallbacks()
 
     local function HookCallback(method, handler)
         local function PostHook(fontInstance, ...)
-            if self.isUpdating then return end
+            if self.isUpdating or fontInstance.IsFontmancerPreview then return end
 
             local fontName = fontInstance:GetName() or fontInstance:GetDebugName()
             self:StoreOriginals(fontName, fontInstance)

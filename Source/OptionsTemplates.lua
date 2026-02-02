@@ -302,6 +302,8 @@ end
 function addonTable:SetupFontMenu(dropdown, getVal, setVal)
     dropdown:SetText(getVal() or "Select Font")
     dropdown:SetupMenu(function(dropdown, rootDescription)
+        rootDescription:SetScrollMode(300)
+
         local fonts = LSM:HashTable(LSM.MediaType.FONT)
         local sorted = {}
         for k in pairs(fonts) do table.insert(sorted, k) end
@@ -319,9 +321,16 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
             -- We can't directly edit the button's font string for some stupid bs reason so we have to do this bs workaround that I hate
             -- IT'S BS
             radioButton:AddInitializer(function(button)
-                local overlay
+                -- Start by ignoring the base font string in our customisations (because again, forbidden) and hiding it from the UI
+                button.fontString.IsFontmancerPreview = true
+                local capturedName = button.fontString:GetName() or button.fontString:GetDebugName()
+                if capturedName and addonTable.originalValues[capturedName] then
+                    addonTable.originalValues[capturedName] = nil
+                end
+                button.fontString:SetAlpha(0)
 
                 -- Look for an already created overlay in children
+                local overlay
                 for _, child in ipairs({ button:GetChildren() }) do
                     if child.IsFontmancerPreview then
                         overlay = child
@@ -329,32 +338,31 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
                     end
                 end
 
+                -- Doesn't exist? Create it
                 if not overlay then
                     overlay = CreateFrame("Frame", nil, button)
                     overlay:SetAllPoints(button)
 
-                    overlay.IsFontmancerPreview = true
-
                     overlay.fontString = overlay:CreateFontString(nil, "ARTWORK")
                     overlay.fontString:SetPoint("LEFT", button, "LEFT", 25, 0)
 
+                    overlay.IsFontmancerPreview = true            -- So it can be found by future initializer calls
+                    overlay.fontString.IsFontmancerPreview = true -- So the hooked callback doesn't replace it
+
                     overlay:SetScript("OnUpdate", function(self)
-                        -- If the parent's default text is visible, it means the button has been reset for a non-Fontmancer menu
+                        -- If the parent's default text is visible, it means the button has been recycled for a non-Fontmancer menu
                         if self:GetParent().fontString:GetAlpha() > 0 then
                             self:Hide()
                         end
                     end)
                 end
 
+                -- Overlay done no matter what; we can set its font & text
                 local fontPath = LSM:Fetch(LSM.MediaType.FONT, fontName)
                 if fontPath then
                     overlay.fontString:SetFont(fontPath, 14, "")
                 end
-
                 overlay.fontString:SetText(fontName) -- Must be set after the font
-
-                -- Hide the original text and show the overlay instead
-                button.fontString:SetAlpha(0)
                 overlay:Show()
             end)
         end
