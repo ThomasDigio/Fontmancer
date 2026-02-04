@@ -15,6 +15,7 @@ def find_svn_command():
     for path in possible_paths:
         if os.path.exists(path):
             return path
+
     return None
 
 def main():
@@ -58,12 +59,12 @@ def main():
                 externals[path.strip()] = url.strip()
 
     if not externals:
-        print("No externals found to install.")
+        print("No externals found to install :(")
         return
 
     svn_cmd = find_svn_command()
     if not svn_cmd:
-        print("Error: 'svn' not found. Please ensure SlikSVN is installed and added to your PATH.")
+        print("Error: 'svn' not found. Please ensure SlikSVN is installed and added to your PATH")
         return
 
     print(f"Found {len(externals)} libraries. Starting installation with SlikSVN...")
@@ -78,7 +79,7 @@ def main():
         else:
             subprocess.run([svn_cmd, 'checkout', url, local_path], shell=False)
 
-    print("Done.")
+    print("Done!")
 
 if __name__ == "__main__":
     main()

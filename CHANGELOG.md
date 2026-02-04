@@ -1,4 +1,2 @@
-- Added setting to exclude certain texts from having outlines applied due to unreadable results
-- Fixed font dropdown not having a scrollbar
-- Text/shadow colours now apply to even more text
-- Continued improvement of option panel
+- Fixed error happening with Platynator & potentially other addons (attempt to call method '?')
+- Fixed error happening with dropdowns (Use of function 'SetFont' is disallowed). Had no choice but to temporarily revert some of the previous improvements. I'll come back to it later to make sure they work without breaking something else

@@ -11,13 +11,21 @@ function addonTable:HookCallbacks()
         local function PostHook(fontInstance, ...)
             if self.isUpdating or fontInstance.IsFontmancerPreview then return end
 
-            local fontName = fontInstance:GetName() or fontInstance:GetDebugName()
+            local fontName = fontInstance:GetName()
+            if not fontName then
+                if fontInstance.GetDebugName then
+                    fontName = fontInstance:GetDebugName()
+                else
+                    fontName = tostring(fontInstance)
+                end
+            end
+
             self:StoreOriginals(fontName, fontInstance)
             handler(fontName, fontInstance, ...)
         end
 
         hooksecurefunc(fontMeta, method, PostHook)
-        hooksecurefunc(fontStringMeta, method, PostHook)
+        -- hooksecurefunc(fontStringMeta, method, PostHook)
     end
 
     HookCallback("SetFont", function(name, fontInstance, fontFile, height, flags)
