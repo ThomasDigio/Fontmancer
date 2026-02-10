@@ -70,8 +70,6 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
             -- false = Default, true = Force On, nil = Force Off
             addonTable.db.flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false }
         end
-        -- Ensure specific table exists
-        addonTable.db.specific = addonTable.db.specific or {}
 
         -- Populate addon properties needed for options
         for key, value in pairs(addonTable.metadata) do
@@ -85,20 +83,14 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         -- addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
 
         -- Apply settings to all fonts
-        local fonts = GetFonts()
-
-        for _, fontName in ipairs(fonts) do
+        for _, fontName in ipairs(GetFonts()) do
             local font = _G[fontName]
             if font then
                 addonTable:StoreOriginals(fontName, font)
+                addonTable:UpdateInstance(fontName)
             end
         end
 
-        for _, fontName in ipairs(fonts) do
-            addonTable:UpdateInstance(fontName)
-        end
-
-        -- Setup the hooks for updates during session
         addonTable:HookCallbacks()
     end
 end)

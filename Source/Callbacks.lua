@@ -11,6 +11,13 @@ function addonTable:HookCallbacks()
         local function PostHook(fontInstance, ...)
             if self.isUpdating or fontInstance.IsFontmancerPreview then return end
 
+            -- Skip if the font instance is a font string from a modern dropdown menu radio button because it's forbidden
+            if fontInstance.GetParent then
+                if fontInstance:GetParent():IsObjectType("Button") then
+                    return
+                end
+            end
+
             local fontName = fontInstance:GetName()
             if not fontName then
                 if fontInstance.GetDebugName then
@@ -25,7 +32,7 @@ function addonTable:HookCallbacks()
         end
 
         hooksecurefunc(fontMeta, method, PostHook)
-        -- hooksecurefunc(fontStringMeta, method, PostHook)
+        hooksecurefunc(fontStringMeta, method, PostHook)
     end
 
     HookCallback("SetFont", function(name, fontInstance, fontFile, height, flags)

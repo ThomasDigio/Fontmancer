@@ -1,2 +1,2 @@
-- Fixed error happening with Platynator & potentially other addons (attempt to call method '?')
-- Fixed error happening with dropdowns (Use of function 'SetFont' is disallowed). Had no choice but to temporarily revert some of the previous improvements. I'll come back to it later to make sure they work without breaking something else
+- Reactivated temporarily reverted improvements
+- Fixed error with WaypointUI and potentially other addons (attempt to index field '?')

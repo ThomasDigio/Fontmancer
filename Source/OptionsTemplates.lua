@@ -22,8 +22,7 @@ function addonTable:CreateFadeTooltip()
     function tooltip:ShowMessage(owner, text)
         self:SetPoint("BOTTOM", owner, "TOP", 0, 5)
         self.text:SetText(text)
-        -- Dynamic width based on text, capped at half screen width
-        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20))
+        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20)) -- Dynamic width based on text, capped at half screen width
         self:SetHeight(self.text:GetStringHeight() + 20)
 
         UIFrameFadeIn(self, 0.2, 0, 1)
@@ -321,12 +320,7 @@ function addonTable:SetupFontMenu(dropdown, getVal, setVal)
             -- We can't directly edit the button's font string for some stupid bs reason so we have to do this bs workaround that I hate
             -- IT'S BS
             radioButton:AddInitializer(function(button)
-                -- Start by ignoring the base font string in our customisations (because again, forbidden) and hiding it from the UI
-                button.fontString.IsFontmancerPreview = true
-                local capturedName = button.fontString:GetName() or button.fontString:GetDebugName()
-                if capturedName and addonTable.originalValues[capturedName] then
-                    addonTable.originalValues[capturedName] = nil
-                end
+                -- Start by hiding it from the UI
                 button.fontString:SetAlpha(0)
 
                 -- Look for an already created overlay in children
