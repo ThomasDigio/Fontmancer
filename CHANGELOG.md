@@ -1,2 +1,3 @@
+- Updated for 12.0.1
 - Reactivated temporarily reverted improvements
 - Fixed error with WaypointUI and potentially other addons (attempt to index field '?')
