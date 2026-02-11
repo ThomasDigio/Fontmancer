@@ -1,5 +1,5 @@
 ## Interface: 120001, 50503, 11508
-## Version: 2.1.3
+## Version: 2.1.4
 ## Title: |cffee992bF|r|cfff09f27o|r|cfff1a422n|r|cfff3aa1et|r|cfff5af1am|r|cfff6b516a|r|cfff8bb11n|r|cfffac00dc|r|cfffcc609e|r|cfffdcb04r|r
 ## Notes: Magically apply the same font to your whole UI with a single click!
 ## Author: Orazur

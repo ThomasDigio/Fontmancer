@@ -83,12 +83,17 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
         -- addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
 
         -- Apply settings to all fonts
-        for _, fontName in ipairs(GetFonts()) do
+        -- Must be done in 2 separate loops to ensure all original values are stored before any updates are applied
+        -- Otherwise we might end up with some fonts using already modified values as "originals"
+        local fonts = GetFonts()
+        for _, fontName in ipairs(fonts) do
             local font = _G[fontName]
             if font then
                 addonTable:StoreOriginals(fontName, font)
-                addonTable:UpdateInstance(fontName)
             end
+        end
+        for _, fontName in ipairs(fonts) do
+            addonTable:UpdateInstance(fontName)
         end
 
         addonTable:HookCallbacks()
