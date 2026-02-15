@@ -8,9 +8,9 @@ addonTable.metadata = {
 }
 addonTable.databaseDefaults = {
     selectedFont = nil,
-    excludeNameplates = false,
+    enableHooks = true,
+    exclusionList = {},
     -- Flags would be here, but purposefully missing (need special handling because of possible nil values)
-    excludeFlagsDarkText = true,
     offsets = { height = 0, spacing = 0, shadow = { x = 0, y = 0 } },
     colours = {
         text = { isEnabled = false, r = 215 / 255, g = 151 / 255, b = 67 / 255, a = 1 },
@@ -21,6 +21,19 @@ addonTable.databaseDefaults = {
 }
 addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
 addonTable.originalValues = {}
+
+-- Helper to check exclusion state
+-- Returns: "FULL", "PARTIAL", or nil
+function addonTable:GetExclusionState(name)
+    if not name then return nil end
+    local lowerName = name:lower()
+    for keyword, state in pairs(self.db.exclusionList) do
+        if keyword ~= "" and string.find(lowerName, keyword:lower()) then
+            return state
+        end
+    end
+    return nil
+end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
@@ -76,7 +89,6 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
             addonTable.metadata[key] = C_AddOns.GetAddOnMetadata(addonName, value)
         end
         addonTable.initiallySelectedFont = addonTable.db.selectedFont
-        addonTable.initialExcludeNameplates = addonTable.db.excludeNameplates
     elseif event == "PLAYER_LOGIN" then
         local fadeTooltip = addonTable:CreateFadeTooltip()
         addonTable:CreateOptionsPanel(fadeTooltip)
@@ -108,8 +120,9 @@ end
 
 function addonTable:UpdateInstance(name, revertingFunction)
     local fontInstance = self.originalValues[name].instance
-    local isExcluded = self.db.excludeNameplates and string.find(name:lower(), "nameplate")
-    if not fontInstance or isExcluded then return end
+
+    local state = self:GetExclusionState(name)
+    if not fontInstance or state == "FULL" then return end
 
     if revertingFunction then
         revertingFunction(self, name, fontInstance, true)
@@ -124,7 +137,7 @@ function addonTable:UpdateInstance(name, revertingFunction)
 end
 
 function addonTable:StoreOriginals(name, fontInstance)
-    if self.originalValues[name] then return end
+    if self.originalValues[name] then return false end
 
     local fontFile, height, flags = fontInstance:GetFont()
     local textRed, textGreen, textBlue, textAlpha = fontInstance:GetTextColor()
@@ -145,9 +158,14 @@ function addonTable:StoreOriginals(name, fontInstance)
             spacing = fontInstance:GetSpacing()
         }
     }
+
+    return true
 end
 
 function addonTable:ApplyFont(name, fontInstance)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" then return end
+
     local selectedFont = self.db.selectedFont
     if not selectedFont then return end
 
@@ -166,7 +184,8 @@ function addonTable:ApplyFont(name, fontInstance)
 
     -- Height
     local newHeight
-    if disabled.height then
+    if state == "PARTIAL" or disabled.height then
+        -- In PARTIAL mode, we preserve the original height (or whatever was set by the game)
         newHeight = self.originalValues[name].height
     elseif specific and specific.height then
         newHeight = specific.height
@@ -176,7 +195,8 @@ function addonTable:ApplyFont(name, fontInstance)
 
     -- Flags
     local newFlags
-    if disabled.flags then
+    if state == "PARTIAL" or disabled.flags then
+        -- In PARTIAL mode, we preserve the original flags
         newFlags = self.originalValues[name].flags
     elseif specific and specific.flags then
         newFlags = specific.flags
@@ -204,14 +224,12 @@ function addonTable:ApplyFont(name, fontInstance)
         end
 
         -- Outlines exclusions
-        if self.db.excludeFlagsDarkText then
-            local r, g, b = fontInstance:GetTextColor()
-            if canaccessvalue(r) and canaccessvalue(g) and canaccessvalue(b) then
-                local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
-                if luminance < 0.2 then
-                    activeFlags["OUTLINE"] = nil
-                    activeFlags["THICKOUTLINE"] = nil
-                end
+        local r, g, b = fontInstance:GetTextColor()
+        if canaccessvalue(r) and canaccessvalue(g) and canaccessvalue(b) then
+            local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
+            if luminance < 0.2 then
+                activeFlags["OUTLINE"] = nil
+                activeFlags["THICKOUTLINE"] = nil
             end
         end
 
@@ -224,12 +242,27 @@ function addonTable:ApplyFont(name, fontInstance)
         newFlags = table.concat(newFlagsSplit, ", ")
     end
 
+    -- TODO: figure out why that works in letting objective text scale immediately
+    local currentFile, currentHeight, currentFlags = fontInstance:GetFont()
+    -- Handle floating point precision for height
+    local heightMatch = (math.abs(currentHeight - newHeight) < 0.05)
+    -- Handle flag normalization (Game might return nil for empty string)
+    local flagsMatch = (currentFlags or "") == (newFlags or "")
+    -- Handle file normalization (Case insensitive and backslash/slash agnostic usually best, but simple check first)
+    local fileMatch = (currentFile == fontToUse)
+    if fileMatch and heightMatch and flagsMatch then
+        return -- The font is already correct. Don't touch it.
+    end
+
     self.isUpdating = true
     fontInstance:SetFont(fontToUse, newHeight, newFlags)
     self.isUpdating = false
 end
 
 function addonTable:ApplySpacing(name, fontInstance)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" or state == "PARTIAL" then return end
+
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
     local spacing
@@ -248,6 +281,9 @@ function addonTable:ApplySpacing(name, fontInstance)
 end
 
 function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" or state == "PARTIAL" then return end
+
     local colourSettings = self.db.colours.text
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
@@ -271,12 +307,13 @@ function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
     self.isUpdating = false
 
     -- This ensures that if a FontString becomes dark, the outline is removed
-    if self.db.excludeFlagsDarkText then
-        self:ApplyFont(name, fontInstance)
-    end
+    self:ApplyFont(name, fontInstance)
 end
 
 function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" or state == "PARTIAL" then return end
+
     local colourSettings = self.db.colours.shadow
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
@@ -301,6 +338,9 @@ function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
 end
 
 function addonTable:ApplyShadowOffset(name, fontInstance)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" or state == "PARTIAL" then return end
+
     local original = self.originalValues[name]
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}

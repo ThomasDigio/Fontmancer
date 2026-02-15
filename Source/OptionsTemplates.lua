@@ -55,10 +55,10 @@ function addonTable:CreatePanelHeader(panel, fadeTooltip)
     infoButton:GetHighlightTexture():SetAlpha(0.5)
     infoButton:SetScript("OnEnter", function(self)
         fadeTooltip:ShowMessage(self,
-            "In very specific cases, certain rendered fonts can update incorrectly after changing some of Fontmancer's settings. If that happens, reloading your UI should fix it."
+            "Some settings require a UI reload to take effect (a button will appear when needed)."
             .. "\n"
             ..
-            "That said, weird states in a session where you have not changed settings is NOT expected. If that happens to you and you'd like to help me, report the issue using the link on CurseForge :)")
+            "If you experience display issues without having changed any settings, please report the bug using the link on CurseForge :)")
     end)
     infoButton:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
 
@@ -105,36 +105,35 @@ function addonTable:CreateCheckbox(label, key, parent, onEnter, onLeave)
     return button
 end
 
-function addonTable:CreateTriStateCheckbox(label, key, parent, descriptionFrame, descriptionText)
-    local button = self:CreateCheckbox(label, nil, parent, function()
+function addonTable:CreateTriStateCheckbox(label, key, parent, fadeTooltip, descriptionText)
+    local button = self:CreateCheckbox(label, nil, parent, function(self)
         local state = addonTable.db.flags[key]
         local subText = ""
         if state == false then
-            subText = "|cff808080(Left as default)|r"
+            subText = "|cff808080(Currently left as default)|r"
         elseif state == true then
-            subText = "|cff00ff00(Applied everywhere)|r"
+            subText = "|cff00ff00(Currently applied everywhere)|r"
         else
-            subText = "|cffff0000(Removed everywhere)|r"
+            subText = "|cffff0000(Currently removed everywhere)|r"
         end
 
-        descriptionFrame:SetText(descriptionText .. "\n" .. subText)
-        UIFrameFadeIn(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 1)
+        fadeTooltip:ShowMessage(self, descriptionText .. "\n" .. subText)
     end, function()
-        UIFrameFadeOut(descriptionFrame, 0.2, descriptionFrame:GetAlpha(), 0)
+        fadeTooltip:HideMessage()
     end)
     button.text:SetFontObject("GameFontNormalLarge") -- Makes the text a bit larger
 
     local function UpdateVisuals()
         local state = addonTable.db.flags[key]
-        local tex = button:GetCheckedTexture()
+        local texture = button:GetCheckedTexture()
         if state == false then
             button:SetChecked(false)
         elseif state == true then
             button:SetChecked(true)
-            tex:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+            texture:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
         else
             button:SetChecked(true)
-            tex:SetTexture("Interface\\RaidFrame\\ReadyCheck-NotReady")
+            texture:SetTexture("Interface\\RaidFrame\\ReadyCheck-NotReady")
         end
     end
 

@@ -1,1 +1,4 @@
-- Fixed error with offsets sometimes being applied twice (again)
+- Added option to toggle the full override added in recent versions
+- Replaced the nameplate exclusion checkbox with a customisable list of frames to exclude. To recreate the setting, simply add 'nameplate' to the list.
+- Removed dark text exclusion option (now always applied)
+- Updated flags description to use the tooltip system

@@ -9,9 +9,9 @@ function addonTable:HookCallbacks()
 
     local function HookCallback(method, handler)
         local function PostHook(fontInstance, ...)
-            if self.isUpdating or fontInstance.IsFontmancerPreview then return end
+            if self.isUpdating or fontInstance.IsFontmancerPreview or not self.db.enableHooks then return end
 
-            -- Skip if the font instance is a font string from a modern dropdown menu radio button because it's forbidden
+            -- Skip if the font instance is a font string from a modern dropdown menu radio button because it's forbidden to set their font
             if fontInstance.GetParent then
                 if fontInstance:GetParent():IsObjectType("Button") then
                     return
@@ -27,6 +27,9 @@ function addonTable:HookCallbacks()
                 end
             end
 
+            local exclusionState = self:GetExclusionState(fontName)
+            if exclusionState == "FULL" then return end
+
             self:StoreOriginals(fontName, fontInstance)
             handler(fontName, fontInstance, ...)
         end
@@ -36,6 +39,7 @@ function addonTable:HookCallbacks()
     end
 
     HookCallback("SetFont", function(name, fontInstance, fontFile, height, flags)
+        self.originalValues[name].fontFile = fontFile
         self.originalValues[name].height = height
         self.originalValues[name].flags = flags or self.originalValues[name].flags or ""
         self:ApplyFont(name, fontInstance)
