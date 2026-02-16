@@ -47,6 +47,8 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
         addonTable.db.enableHooks = self:GetChecked()
     end)
 
+    local RefreshExclusionList
+    panel:SetScript("OnShow", function() RefreshExclusionList() end)
     local exclusionInput = CreateFrame("EditBox", nil, panel, "SearchBoxTemplate")
     exclusionInput:SetSize(200, 20)
     exclusionInput:SetAutoFocus(false)
@@ -59,33 +61,35 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
         fadeTooltip:ShowMessage(self, "Reloading your UI is recommended when adding exclusions or changing their states")
     end)
     exclusionReload:HookScript("OnLeave", function() fadeTooltip:HideMessage() end)
-
     local function ShowExclusionReload()
         UIFrameFadeIn(exclusionReload, 0.2, exclusionReload:GetAlpha(), 1)
     end
+    exclusionInput:SetScript("OnEnterPressed", function(self)
+        local text = self:GetText()
+        if text and text ~= "" then
+            addonTable.db.exclusionList[text] = "FULL"
+            self:SetText("")
+            self:ClearFocus()
+            RefreshExclusionList()
+            addonTable:UpdateAllStoredInstances()
+            ShowExclusionReload()
+        end
+    end)
 
-    -- Forward declare refresh function
-    local RefreshExclusionList
-
-    -- Modern ScrollBox Implementation
     local scrollBox = CreateFrame("Frame", nil, panel, "WowScrollBoxList")
     scrollBox:SetHeight(150)
     scrollBox:SetPoint("TOPLEFT", exclusionInput, "BOTTOMLEFT", 0, -10)
     scrollBox:SetPoint("RIGHT", exclusionInput, "RIGHT", -20, 0) -- Leave space for scrollbar
-
     local scrollBar = CreateFrame("EventFrame", nil, panel, "MinimalScrollBar")
     scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 5, 0)
     scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 5, 0)
-
     local listBg = scrollBox:CreateTexture(nil, "BACKGROUND")
     listBg:SetAllPoints()
     listBg:SetColorTexture(0, 0, 0, 0.2)
 
     local view = CreateScrollBoxListLinearView()
-    view:SetElementExtent(24) -- Fixed height per row
-
-    -- Row Initialization
-    local function InitExclusionRow(f, elementData)
+    view:SetElementExtent(24)
+    view:SetElementInitializer("BackdropTemplate", function(f, elementData)
         f.elementData = elementData -- Bind data for scripts to access
         f:Show()
 
@@ -124,15 +128,14 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
             end)
             f.toggleBtn:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
 
-            -- Delete Button
-            f.delBtn = CreateFrame("Button", nil, f)
-            f.delBtn:SetSize(16, 16)
-            f.delBtn:SetPoint("LEFT", f.toggleBtn, "RIGHT", 5, 0)
-            f.delBtn:SetNormalAtlas("transmog-icon-remove")
-            f.delBtn:SetHighlightAtlas("transmog-icon-remove")
-            f.delBtn:GetHighlightTexture():SetAlpha(0.5)
+            f.deleteButton = CreateFrame("Button", nil, f)
+            f.deleteButton:SetSize(16, 16)
+            f.deleteButton:SetPoint("LEFT", f.toggleBtn, "RIGHT", 5, 0)
+            f.deleteButton:SetNormalAtlas("transmog-icon-remove")
+            f.deleteButton:SetHighlightAtlas("transmog-icon-remove")
+            f.deleteButton:GetHighlightTexture():SetAlpha(0.5)
 
-            f.delBtn:SetScript("OnClick", function(self)
+            f.deleteButton:SetScript("OnClick", function(self)
                 local key = self:GetParent().elementData.key
                 addonTable.db.exclusionList[key] = nil
                 RefreshExclusionList()
@@ -141,7 +144,6 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
             end)
         end
 
-        -- Visual Updates
         f.text:SetText(elementData.key)
 
         if elementData.state == "FULL" then
@@ -151,14 +153,14 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
             f.toggleBtn:SetText("Font Only")
             f.toggleBtn:GetFontString():SetTextColor(0.5, 1, 0.5) -- Green
         end
-    end
-
-    view:SetElementInitializer("BackdropTemplate", InitExclusionRow)
+    end)
     ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, view)
 
+    -- The view is required before assigning the data provider
     local dataProvider = CreateDataProvider()
     scrollBox:SetDataProvider(dataProvider)
 
+    -- Now that we have the data provider, we can define the function
     RefreshExclusionList = function()
         local sortedItems = {}
         for k, v in pairs(addonTable.db.exclusionList) do
@@ -171,20 +173,6 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
             dataProvider:Insert(item)
         end
     end
-
-    exclusionInput:SetScript("OnEnterPressed", function(self)
-        local text = self:GetText()
-        if text and text ~= "" then
-            addonTable.db.exclusionList[text] = "FULL"
-            self:SetText("")
-            self:ClearFocus()
-            RefreshExclusionList()
-            addonTable:UpdateAllStoredInstances()
-            ShowExclusionReload()
-        end
-    end)
-
-    panel:SetScript("OnShow", function() RefreshExclusionList() end)
 
     local flagsHeader = self:CreateSectionHeader(panel, "Flags", scrollBox)
     local darkTextInfo = "Dark texts will be excluded from the flag's effects to maintain readability"
