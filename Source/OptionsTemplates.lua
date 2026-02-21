@@ -38,7 +38,7 @@ end
 function addonTable:CreatePanelHeader(panel, fadeTooltip)
     local logo = panel:CreateTexture(nil, "ARTWORK")
     logo:SetSize(25, 25)
-    logo:SetPoint("TOPLEFT", 15, -15)
+    logo:SetPoint("TOPLEFT", 15, -12)
     logo:SetTexture(self.metadata.LOGO_PATH)
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("LEFT", logo, "RIGHT", 10, -2)

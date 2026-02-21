@@ -43,17 +43,27 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
     end)
     hookCheckbox:SetPoint("TOPLEFT", generalHeader, "BOTTOM", 40, -20)
     hookCheckbox:SetChecked(addonTable.db.enableHooks)
+    local hookReload = self:CreateReloadButton(panel, hookCheckbox.text, 10, 0, C_UI.Reload)
+    hookReload:Hide()
+    hookReload:HookScript("OnEnter", function(self)
+        fadeTooltip:ShowMessage(self, "Reloading your UI is recommended when enabling/disabling this option")
+    end)
+    hookReload:HookScript("OnLeave", function()
+        fadeTooltip:HideMessage()
+    end)
     hookCheckbox:SetScript("OnClick", function(self)
         addonTable.db.enableHooks = self:GetChecked()
+        UIFrameFadeIn(hookReload, 0.2, hookReload:GetAlpha(), 1)
     end)
+
 
     local RefreshExclusionList
     panel:SetScript("OnShow", function() RefreshExclusionList() end)
     local exclusionInput = CreateFrame("EditBox", nil, panel, "SearchBoxTemplate")
     exclusionInput:SetSize(200, 20)
     exclusionInput:SetAutoFocus(false)
-    exclusionInput:SetPoint("TOPLEFT", fontDropDown, "BOTTOMLEFT", 0, -15)
-    exclusionInput:SetPoint("RIGHT", hookCheckbox.text, "RIGHT", 0, 0)
+    exclusionInput:SetPoint("TOPLEFT", fontDropDown, "BOTTOMLEFT", 2, -15)
+    exclusionInput:SetPoint("TOPRIGHT", hookCheckbox.text, "BOTTOMRIGHT", 0, -15)
     exclusionInput.Instructions:SetText("Enter a frame name to exclude (partial or full, case-insensitive)")
     local exclusionReload = self:CreateReloadButton(panel, exclusionInput, 10, 0, C_UI.Reload)
     exclusionReload:Hide()
@@ -77,9 +87,9 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
     end)
 
     local scrollBox = CreateFrame("Frame", nil, panel, "WowScrollBoxList")
-    scrollBox:SetHeight(150)
+    scrollBox:SetHeight(100)
     scrollBox:SetPoint("TOPLEFT", exclusionInput, "BOTTOMLEFT", 0, -10)
-    scrollBox:SetPoint("RIGHT", exclusionInput, "RIGHT", -20, 0) -- Leave space for scrollbar
+    scrollBox:SetPoint("TOPRIGHT", exclusionInput, "BOTTOMRIGHT", -20, 0) -- Leave space for scrollbar
     local scrollBar = CreateFrame("EventFrame", nil, panel, "MinimalScrollBar")
     scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 5, 0)
     scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 5, 0)
@@ -103,56 +113,49 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
             f.text:SetJustifyH("LEFT")
             f.text:SetWordWrap(false)
 
-            -- Toggle Button
-            f.toggleBtn = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
-            f.toggleBtn:SetSize(80, 20)
-            f.toggleBtn:SetPoint("RIGHT", -30, 0)
-
-            f.toggleBtn:SetScript("OnClick", function(self)
-                local parent = self:GetParent()
-                local key = parent.elementData.key
-                local current = addonTable.db.exclusionList[key]
-
-                addonTable.db.exclusionList[key] = (current == "FULL") and "PARTIAL" or "FULL"
-                RefreshExclusionList()
-                addonTable:UpdateAllStoredInstances()
-                ShowExclusionReload()
-            end)
-
-            f.toggleBtn:SetScript("OnEnter", function(self)
-                local data = self:GetParent().elementData
-                local isFull = (addonTable.db.exclusionList[data.key] == "FULL")
-                fadeTooltip:ShowMessage(self, isFull
-                    and "Fully ignore this element (Requires Reload to revert)"
-                    or "Apply Font file only; ignore color/size/shadows")
-            end)
-            f.toggleBtn:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
-
             f.deleteButton = CreateFrame("Button", nil, f)
             f.deleteButton:SetSize(16, 16)
-            f.deleteButton:SetPoint("LEFT", f.toggleBtn, "RIGHT", 5, 0)
+            f.deleteButton:SetPoint("RIGHT", -5, 0)
             f.deleteButton:SetNormalAtlas("transmog-icon-remove")
             f.deleteButton:SetHighlightAtlas("transmog-icon-remove")
             f.deleteButton:GetHighlightTexture():SetAlpha(0.5)
-
             f.deleteButton:SetScript("OnClick", function(self)
                 local key = self:GetParent().elementData.key
                 addonTable.db.exclusionList[key] = nil
                 RefreshExclusionList()
                 addonTable:UpdateAllStoredInstances()
-                ShowExclusionReload()
             end)
+
+            -- f.toggleButton = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
+            -- f.toggleButton:SetSize(80, 20)
+            -- f.toggleButton:SetPoint("RIGHT", f.deleteButton, "LEFT", -5, 0)
+            -- f.toggleButton:SetScript("OnClick", function(self)
+            --     local parent = self:GetParent()
+            --     local key = parent.elementData.key
+            --     local current = addonTable.db.exclusionList[key]
+
+            --     addonTable.db.exclusionList[key] = (current == "FULL") and "PARTIAL" or "FULL"
+            --     RefreshExclusionList()
+            --     addonTable:UpdateAllStoredInstances()
+            --     ShowExclusionReload()
+            -- end)
+            -- f.toggleButton:SetScript("OnEnter", function(self)
+            --     local data = self:GetParent().elementData
+            --     local isFull = (addonTable.db.exclusionList[data.key] == "FULL")
+            --     fadeTooltip:ShowMessage(self, isFull
+            --         and "Fully ignore this element (Requires Reload to revert)"
+            --         or "Apply Font file only; ignore color/size/shadows")
+            -- end)
+            -- f.toggleButton:SetScript("OnLeave", function() fadeTooltip:HideMessage() end)
         end
 
         f.text:SetText(elementData.key)
 
-        if elementData.state == "FULL" then
-            f.toggleBtn:SetText("Excluded")
-            f.toggleBtn:GetFontString():SetTextColor(1, 0.5, 0.5) -- Red
-        else
-            f.toggleBtn:SetText("Font Only")
-            f.toggleBtn:GetFontString():SetTextColor(0.5, 1, 0.5) -- Green
-        end
+        -- if elementData.state == "FULL" then
+        --     f.toggleButton:SetText("Excluded")
+        -- else
+        --     f.toggleButton:SetText("Font Only")
+        -- end
     end)
     ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, view)
 
@@ -190,11 +193,11 @@ function addonTable:CreateOptionsPanel(fadeTooltip)
     local sizeSlider = self:CreateSlider("Size", "Size", panel, -10, 10, 0.5, addonTable.db.offsets, "height", "TOPRIGHT",
         offsetHeader, "BOTTOM", -20, -20)
     local spaceSlider = self:CreateSlider("Spacing", "Spacing", panel, -10, 10, 0.5, addonTable.db.offsets, "spacing",
-        "TOP", sizeSlider, "BOTTOM", 0, -7)
+        "TOP", sizeSlider, "BOTTOM", 0, -5)
     local shadowXSlider = self:CreateSlider("ShadowX", "Shadow X", panel, -10, 10, 0.5, addonTable.db.offsets.shadow, "x",
         "TOPLEFT", offsetHeader, "BOTTOM", 110, -20)
     self:CreateSlider("ShadowY", "Shadow Y", panel, -10, 10, 0.5, addonTable.db.offsets.shadow, "y", "TOP", shadowXSlider,
-        "BOTTOM", 0, -7)
+        "BOTTOM", 0, -5)
 
     local colourHeader = self:CreateSectionHeader(panel, "Colours", spaceSlider)
     local textColourPicker = self:CreateColourPicker("text", panel, addonTable.db.colours.text,

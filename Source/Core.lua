@@ -105,7 +105,10 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
             end
         end
         for _, fontName in ipairs(fonts) do
-            addonTable:UpdateInstance(fontName)
+            local font = _G[fontName]
+            if font then
+                addonTable:UpdateInstance(fontName)
+            end
         end
 
         addonTable:HookCallbacks()
@@ -190,7 +193,12 @@ function addonTable:ApplyFont(name, fontInstance)
     elseif specific and specific.height then
         newHeight = specific.height
     else
-        newHeight = math.max(self.originalValues[name].height + self.db.offsets.height, 0.5)
+        local originalHeight = self.originalValues[name].height
+        if originalHeight == 0 then
+            -- Fallback to a sensible default (happens with Clique's dropdowns for example)
+            originalHeight = 12
+        end
+        newHeight = math.max(originalHeight + self.db.offsets.height, 0.5)
     end
 
     -- Flags
