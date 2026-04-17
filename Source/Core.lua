@@ -26,9 +26,8 @@ addonTable.originalValues = {}
 -- Returns: "FULL", "PARTIAL", or nil
 function addonTable:GetExclusionState(name)
     if not name then return nil end
-    local lowerName = name:lower()
     for keyword, state in pairs(self.db.exclusionList) do
-        if keyword ~= "" and string.find(lowerName, keyword:lower()) then
+        if keyword ~= "" and string.find(name, keyword) then
             return state
         end
     end

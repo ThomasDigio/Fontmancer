@@ -1,6 +1,2 @@
-- Added option to toggle the full override added in recent versions
-- Replaced the nameplate exclusion checkbox with a customisable list of frames to exclude. To recreate the setting, simply add 'nameplate' to the list.
-- Removed dark text exclusion option (now always applied)
-- Updated flags description to use the tooltip system
-- Fixed error when using Fontmancer with WaypointUI
-- Fixed Clique's tiny unreadable dropdown text
+- Fixed error: "attempt to index local 'name' (a secret string value tainted by 'Fontmancer')"
+- As a consequence, keywords in the excluded frame name list is now case-sensitive (sorry, currently no way around it)
