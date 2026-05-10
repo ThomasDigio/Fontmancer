@@ -19,12 +19,13 @@ function addonTable:HookCallbacks()
             end
 
             local fontName = fontInstance:GetName()
+            if not canaccessvalue(fontName) then fontName = nil end
+            if not fontName and fontInstance.GetDebugName then
+                fontName = fontInstance:GetDebugName()
+                if not canaccessvalue(fontName) then fontName = nil end
+            end
             if not fontName then
-                if fontInstance.GetDebugName then
-                    fontName = fontInstance:GetDebugName()
-                else
-                    fontName = tostring(fontInstance)
-                end
+                fontName = tostring(fontInstance)
             end
 
             local exclusionState = self:GetExclusionState(fontName)

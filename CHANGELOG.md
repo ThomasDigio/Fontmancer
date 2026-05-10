@@ -1,2 +1,2 @@
-- Fixed error: "attempt to index local 'name' (a secret string value tainted by 'Fontmancer')"
-- As a consequence, keywords in the excluded frame name list is now case-sensitive (sorry, currently no way around it)
+- Fixed secret-related error
+- This is a blind fix (I've not seen the issue myself, can't confirm whether this fully squashes the problem). As you can guess from the rate of updates, I'm not actively playing WoW right now, so if any issue arises again please report it through Github and not in the curseforge comments! This makes it way easier for me
