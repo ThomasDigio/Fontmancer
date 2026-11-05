@@ -3,5 +3,5 @@
 - Fixed Classic Era and Mists of Pandaria Classic crash caused by calling Retail-only `canaccessvalue` API (#41)
 - Fixed secret value errors in Midnight and Forever when hooks receive or read secret colour, alpha, font, or offset values
 - Restored case-insensitive matching for the excluded frame names list
-- Fixed "SetFont is disallowed" and nil-parent errors on dropdown menus and unparented/forbidden FontStrings (#34)
+- Fixed "SetFont is disallowed" and nil-parent errors on dropdown/context menus and unparented/forbidden FontStrings (#33, #34)
 - Fixed size, spacing, and shadow offsets being applied twice on FontStrings inheriting from already-modified FontObjects
