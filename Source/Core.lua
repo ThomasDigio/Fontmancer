@@ -22,12 +22,34 @@ addonTable.databaseDefaults = {
 addonTable.isUpdating = false -- Allows us to update fonts without triggering callbacks
 addonTable.originalValues = {}
 
+-- Safe wrappers for Retail 12.0+ secret value checks (unavailable in Classic Era / MoP Classic)
+function addonTable:CanAccessValue(val)
+    if canaccessvalue then
+        return canaccessvalue(val)
+    end
+    return true
+end
+
+function addonTable:CanAccessAllValues(...)
+    if canaccessallvalues then
+        return canaccessallvalues(...)
+    elseif canaccessvalue then
+        for i = 1, select("#", ...) do
+            if not canaccessvalue(select(i, ...)) then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 -- Helper to check exclusion state
 -- Returns: "FULL", "PARTIAL", or nil
 function addonTable:GetExclusionState(name)
-    if not name then return nil end
+    if not self:CanAccessValue(name) or not name then return nil end
+    local lowerName = name:lower()
     for keyword, state in pairs(self.db.exclusionList) do
-        if keyword ~= "" and string.find(name, keyword) then
+        if keyword ~= "" and string.find(lowerName, keyword:lower()) then
             return state
         end
     end
@@ -145,6 +167,64 @@ function addonTable:StoreOriginals(name, fontInstance)
     local textRed, textGreen, textBlue, textAlpha = fontInstance:GetTextColor()
     local shadowRed, shadowGreen, shadowBlue, shadowAlpha = fontInstance:GetShadowColor()
     local shadowX, shadowY = fontInstance:GetShadowOffset()
+    local spacing = fontInstance:GetSpacing()
+
+    if not self:CanAccessValue(fontFile) then fontFile = nil end
+    if not self:CanAccessValue(height) or not height then height = 0 end
+    if not self:CanAccessValue(flags) or not flags then flags = "" end
+    if not self:CanAccessValue(spacing) or not spacing then spacing = 0 end
+
+    if not self:CanAccessAllValues(textRed, textGreen, textBlue, textAlpha) then
+        textRed, textGreen, textBlue, textAlpha = 1, 1, 1, 1
+    else
+        textRed = textRed or 1
+        textGreen = textGreen or 1
+        textBlue = textBlue or 1
+        textAlpha = textAlpha or 1
+    end
+
+    if not self:CanAccessAllValues(shadowRed, shadowGreen, shadowBlue, shadowAlpha) then
+        shadowRed, shadowGreen, shadowBlue, shadowAlpha = 0, 0, 0, 1
+    else
+        shadowRed = shadowRed or 0
+        shadowGreen = shadowGreen or 0
+        shadowBlue = shadowBlue or 0
+        shadowAlpha = shadowAlpha or 1
+    end
+
+    if not self:CanAccessAllValues(shadowX, shadowY) then
+        shadowX, shadowY = 0, 0
+    else
+        shadowX = shadowX or 0
+        shadowY = shadowY or 0
+    end
+
+    -- If this is a FontString inheriting from an already-modified FontObject,
+    -- use the FontObject's unmodified originals to avoid applying offsets twice.
+    if fontInstance.GetFontObject then
+        local fontObject = fontInstance:GetFontObject()
+        if self:CanAccessValue(fontObject) and fontObject and not (fontObject.IsForbidden and fontObject:IsForbidden()) then
+            local fontObjectName = fontObject:GetName()
+            if self:CanAccessValue(fontObjectName) and fontObjectName and self.originalValues[fontObjectName] then
+                local parentOrig = self.originalValues[fontObjectName]
+                local parentFile, parentHeight, parentFlags = fontObject:GetFont()
+                if self:CanAccessAllValues(parentFile, parentHeight, parentFlags) then
+                    if not fontFile or fontFile == parentFile then fontFile = parentOrig.file end
+                    if height == 0 or (parentHeight and math.abs(height - parentHeight) < 0.05) then height = parentOrig.height end
+                    if flags == (parentFlags or "") then flags = parentOrig.flags end
+                end
+                local parentSpacing = fontObject:GetSpacing()
+                if self:CanAccessValue(parentSpacing) and parentSpacing and math.abs(spacing - parentSpacing) < 0.05 then
+                    spacing = parentOrig.offsets.spacing
+                end
+                local parentShadowX, parentShadowY = fontObject:GetShadowOffset()
+                if self:CanAccessAllValues(parentShadowX, parentShadowY) and parentShadowX and parentShadowY then
+                    if math.abs(shadowX - parentShadowX) < 0.05 then shadowX = parentOrig.offsets.shadow.x end
+                    if math.abs(shadowY - parentShadowY) < 0.05 then shadowY = parentOrig.offsets.shadow.y end
+                end
+            end
+        end
+    end
 
     self.originalValues[name] = {
         instance = fontInstance,
@@ -157,7 +237,7 @@ function addonTable:StoreOriginals(name, fontInstance)
         height = height,
         offsets = {
             shadow = { x = shadowX, y = shadowY },
-            spacing = fontInstance:GetSpacing()
+            spacing = spacing
         }
     }
 
@@ -169,8 +249,6 @@ function addonTable:ApplyFont(name, fontInstance)
     if state == "FULL" then return end
 
     local selectedFont = self.db.selectedFont
-    if not selectedFont then return end
-
     local specific = self.db.specific[name]
     local disabled = specific and specific.disabled or {}
 
@@ -180,25 +258,30 @@ function addonTable:ApplyFont(name, fontInstance)
         fontToUse = self.originalValues[name].file
     elseif specific and specific.font then
         fontToUse = LSM:Fetch(LSM.MediaType.FONT, specific.font)
-    else
+    elseif selectedFont then
         fontToUse = LSM:Fetch(LSM.MediaType.FONT, selectedFont)
+    else
+        fontToUse = self.originalValues[name].file
     end
+    if not fontToUse then return end
 
     -- Height
+    local originalHeight = self.originalValues[name].height
+    if not originalHeight or originalHeight <= 0 then
+        -- Fallback to a sensible default (happens with Clique's dropdowns for example)
+        originalHeight = 12
+    end
+
     local newHeight
     if state == "PARTIAL" or disabled.height then
         -- In PARTIAL mode, we preserve the original height (or whatever was set by the game)
-        newHeight = self.originalValues[name].height
+        newHeight = originalHeight
     elseif specific and specific.height then
         newHeight = specific.height
     else
-        local originalHeight = self.originalValues[name].height
-        if originalHeight == 0 then
-            -- Fallback to a sensible default (happens with Clique's dropdowns for example)
-            originalHeight = 12
-        end
         newHeight = math.max(originalHeight + self.db.offsets.height, 0.5)
     end
+    if not newHeight or newHeight <= 0 then return end
 
     -- Flags
     local newFlags
@@ -232,7 +315,7 @@ function addonTable:ApplyFont(name, fontInstance)
 
         -- Outlines exclusions
         local r, g, b = fontInstance:GetTextColor()
-        if canaccessvalue(r) and canaccessvalue(g) and canaccessvalue(b) then
+        if self:CanAccessAllValues(r, g, b) and r and g and b then
             local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
             if luminance < 0.2 then
                 activeFlags["OUTLINE"] = nil
@@ -251,18 +334,23 @@ function addonTable:ApplyFont(name, fontInstance)
 
     -- TODO: figure out why that works in letting objective text scale immediately
     local currentFile, currentHeight, currentFlags = fontInstance:GetFont()
-    -- Handle floating point precision for height
-    local heightMatch = (math.abs(currentHeight - newHeight) < 0.05)
-    -- Handle flag normalization (Game might return nil for empty string)
-    local flagsMatch = (currentFlags or "") == (newFlags or "")
-    -- Handle file normalization (Case insensitive and backslash/slash agnostic usually best, but simple check first)
-    local fileMatch = (currentFile == fontToUse)
-    if fileMatch and heightMatch and flagsMatch then
-        return -- The font is already correct. Don't touch it.
+    if self:CanAccessAllValues(currentFile, currentFlags) then
+        -- Handle flag normalization (Game might return nil for empty string)
+        local flagsMatch = (currentFlags or "") == (newFlags or "")
+        -- Handle file normalization (Case insensitive and backslash/slash agnostic usually best, but simple check first)
+        local fileMatch = (currentFile == fontToUse)
+        if not self:CanAccessValue(currentHeight) then
+            -- If currentHeight is a secret value (e.g. Blizzard_CombatText scaling), don't clobber it if font and flags already match
+            if fileMatch and flagsMatch then
+                return
+            end
+        elseif currentHeight and (math.abs(currentHeight - newHeight) < 0.05) and fileMatch and flagsMatch then
+            return -- The font is already correct. Don't touch it.
+        end
     end
 
     self.isUpdating = true
-    fontInstance:SetFont(fontToUse, newHeight, newFlags)
+    pcall(fontInstance.SetFont, fontInstance, fontToUse, newHeight, newFlags)
     self.isUpdating = false
 end
 
@@ -283,7 +371,7 @@ function addonTable:ApplySpacing(name, fontInstance)
     end
 
     self.isUpdating = true
-    fontInstance:SetSpacing(spacing)
+    pcall(fontInstance.SetSpacing, fontInstance, spacing)
     self.isUpdating = false
 end
 
@@ -298,17 +386,17 @@ function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
     self.isUpdating = true
     if shouldRevert or disabled.text then
         local originalColour = self.originalValues[name].colours.text
-        fontInstance:SetTextColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        pcall(fontInstance.SetTextColor, fontInstance, originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif specific and specific.text then
         local s = specific.text
-        fontInstance:SetTextColor(s.r, s.g, s.b, s.a)
+        pcall(fontInstance.SetTextColor, fontInstance, s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        if canaccessvalue(self.originalValues[name].colours.text.a) then
+        if self:CanAccessValue(self.originalValues[name].colours.text.a) then
             local originalAlpha = self.originalValues[name].colours.text.a or 1
             local finalAlpha = math.min(colourSettings.a, originalAlpha)
-            fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+            pcall(fontInstance.SetTextColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
         else
-            fontInstance:SetTextColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+            pcall(fontInstance.SetTextColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
         end
     end
     self.isUpdating = false
@@ -328,17 +416,17 @@ function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
     self.isUpdating = true
     if shouldRevert or disabled.shadow then
         local originalColour = self.originalValues[name].colours.shadow
-        fontInstance:SetShadowColor(originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+        pcall(fontInstance.SetShadowColor, fontInstance, originalColour.r, originalColour.g, originalColour.b, originalColour.a)
     elseif specific and specific.shadow then
         local s = specific.shadow
-        fontInstance:SetShadowColor(s.r, s.g, s.b, s.a)
+        pcall(fontInstance.SetShadowColor, fontInstance, s.r, s.g, s.b, s.a)
     elseif colourSettings.isEnabled then
-        if canaccessvalue(self.originalValues[name].colours.shadow.a) then
+        if self:CanAccessValue(self.originalValues[name].colours.shadow.a) then
             local originalAlpha = self.originalValues[name].colours.shadow.a or 1
             local finalAlpha = math.min(colourSettings.a, originalAlpha)
-            fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+            pcall(fontInstance.SetShadowColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
         else
-            fontInstance:SetShadowColor(colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+            pcall(fontInstance.SetShadowColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
         end
     end
     self.isUpdating = false
@@ -370,6 +458,6 @@ function addonTable:ApplyShadowOffset(name, fontInstance)
     end
 
     self.isUpdating = true
-    fontInstance:SetShadowOffset(newX, newY)
+    pcall(fontInstance.SetShadowOffset, fontInstance, newX, newY)
     self.isUpdating = false
 end

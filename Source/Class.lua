@@ -8,31 +8,35 @@
 -- Defined in Core.lua
 ---@field databaseDefaults table
 ---@field db table
----@field initialExcludeNameplates boolean
 ---@field initiallySelectedFont string
 ---@field isUpdating boolean
 ---@field metadata table
 ---@field originalValues table
----@field ApplyFont fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
----@field ApplyShadowColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
----@field ApplyShadowOffset fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
----@field ApplySpacing fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
----@field StoreOriginals fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table): nil
----@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, originalTable: table, shouldRevert?: boolean): nil
+---@field CanAccessValue fun(self: Fontmancer, val: any): boolean
+---@field CanAccessAllValues fun(self: Fontmancer, ...: any): boolean
+---@field GetExclusionState fun(self: Fontmancer, name: string): string|nil
+---@field ApplyFont fun(self: Fontmancer, name: string, fontInstance: FontInstance): nil
+---@field ApplyShadowColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, shouldRevert?: boolean): nil
+---@field ApplyShadowOffset fun(self: Fontmancer, name: string, fontInstance: FontInstance): nil
+---@field ApplySpacing fun(self: Fontmancer, name: string, fontInstance: FontInstance): nil
+---@field StoreOriginals fun(self: Fontmancer, name: string, fontInstance: FontInstance): boolean
+---@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, shouldRevert?: boolean): nil
 ---@field UpdateAllStoredInstances fun(self: Fontmancer, revertingFunction?: function): nil
 ---@field UpdateInstance fun(self: Fontmancer, name: string, revertingFunction?: function): nil
 -- Defined in Options.lua
----@field settingsCategory string
----@field CreateOptionsPanel fun(self: Fontmancer): nil
+---@field settingsCategory table
+---@field CreateOptionsPanel fun(self: Fontmancer, fadeTooltip: Frame): nil
 -- Defined in OptionsAdvanced.lua
----@field CreateAdvancedOptionsPanel fun(self: Fontmancer): nil
+---@field CreateAdvancedOptionsPanel fun(self: Fontmancer, fadeTooltip: Frame): nil
 -- Defined in OptionsTemplates.lua
----@field CreatePanelHeader fun(self: Fontmancer, panel: Frame): Texture
----@field CreateSectionHeader fun(self: Fontmancer, parent: Frame, text: string, relativeTo: Frame): Frame
----@field CreateTriStateCheckbox fun(self: Fontmancer, label: string, key: string, parent: Frame, descriptionFrame: Frame, descriptionText: string, relativeTo: Frame, xOffset: number, isFirst: boolean): CheckButton
----@field CreateSlider fun(self: Fontmancer, name: string, label: string, parent: Frame, minVal: number, maxVal: number, step: number, dbTable: table, dbKey: string, anchor: string, relativeTo: Frame, relativeAnchor: string, xOffset: number, yOffset: number): Frame
----@field CreateColourPicker fun(self: Fontmancer, label: string, parent: Frame, dbTable: table, relativeTo: Frame, xOffset: number, yOffset: number, callbackFunc: function): nil
----@field CreateReloadButton fun(self: Fontmancer, parent: Frame, relativeTo: Frame, xOffset: number, yOffset: number, callback: function): Button
+---@field CreateFadeTooltip fun(self: Fontmancer): Frame
+---@field CreatePanelHeader fun(self: Fontmancer, panel: Frame, fadeTooltip: Frame): Texture
+---@field CreateSectionHeader fun(self: Fontmancer, parent: Frame, text: string, relativeTo: Region): Frame
+---@field CreateCheckbox fun(self: Fontmancer, label: string, key: string|nil, parent: Frame, onEnter?: function, onLeave?: function): CheckButton
+---@field CreateTriStateCheckbox fun(self: Fontmancer, label: string, key: string, parent: Frame, fadeTooltip: Frame, descriptionText: string): CheckButton
+---@field CreateSlider fun(self: Fontmancer, name: string, label: string, parent: Frame, minVal: number, maxVal: number, step: number, dbTable: table, dbKey: string, anchor: string, relativeTo: Region, relativeAnchor: string, xOffset: number, yOffset: number): Frame
+---@field CreateColourPicker fun(self: Fontmancer, label: string, parent: Frame, dbTable: table, callbackFunc: function): Frame
+---@field CreateReloadButton fun(self: Fontmancer, parent: Frame, relativeTo: Region, xOffset: number, yOffset: number, callback: function): Button
 ---@field CreateFontDropdown fun(self: Fontmancer, parent: Frame): DropdownButton
 ---@field SetupFontMenu fun(self: Fontmancer, dropdown: DropdownButton, getVal: function, setVal: function): nil
 -- Defined in Tooltip.lua

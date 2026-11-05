@@ -50,7 +50,7 @@ function addonTable:GetFontStrings(frame)
     local seen = {}
 
     local function AddIfNotSeen(obj)
-        if obj and not seen[obj] then
+        if obj and self:CanAccessValue(obj) and not (obj.IsForbidden and obj:IsForbidden()) and not seen[obj] then
             seen[obj] = true
             table.insert(fontStrings, obj)
         end
@@ -95,7 +95,7 @@ function addonTable:GetFocusedFrames()
     -- Standard UI frames, can't use GetMouseFoci as that ignores non-interactive stuff
     local frame = EnumerateFrames()
     while frame do
-        if not frame:IsForbidden() then
+        if self:CanAccessValue(frame) and not frame:IsForbidden() then
             local isPossiblyVisible, isVisible = pcall(function() return frame:IsVisible() end)
             if isPossiblyVisible and isVisible then
                 local isPossiblyHovered, isHovered = pcall(function() return frame:IsMouseOver() end)
@@ -109,7 +109,7 @@ function addonTable:GetFocusedFrames()
 
     -- Nameplates
     local function TryAddNameplate(nameplate)
-        if not nameplate:IsForbidden() then
+        if nameplate and self:CanAccessValue(nameplate) and not nameplate:IsForbidden() then
             table.insert(focusedFrames, nameplate)
         end
     end
@@ -141,12 +141,26 @@ function addonTable:PopulateTooltip()
 
             if #fontStrings > 0 then
                 local headerColour = self.databaseDefaults.colours.text
-                self.inspectorTooltip:AddLine(focusedFrame:GetDebugName(), headerColour.r, headerColour.g, headerColour
-                    .b)
+                local frameDebugName = focusedFrame:GetDebugName()
+                if not self:CanAccessValue(frameDebugName) or not frameDebugName then
+                    frameDebugName = "Anonymous Frame"
+                end
+                self.inspectorTooltip:AddLine(frameDebugName, headerColour.r, headerColour.g, headerColour.b)
 
                 for _, fontString in pairs(fontStrings) do
-                    local fontStringName = fontString:GetName() or fontString:GetDebugName() or "Anonymous"
-                    local fontName = fontString:GetFontObject():GetName()
+                    local fontStringName = fontString:GetName()
+                    if not self:CanAccessValue(fontStringName) then fontStringName = nil end
+                    if not fontStringName and fontString.GetDebugName then
+                        fontStringName = fontString:GetDebugName()
+                        if not self:CanAccessValue(fontStringName) then fontStringName = nil end
+                    end
+                    fontStringName = fontStringName or "Anonymous"
+
+                    local fontObject = fontString:GetFontObject()
+                    local fontName = fontObject and fontObject:GetName()
+                    if not self:CanAccessValue(fontName) or not fontName then
+                        fontName = "None"
+                    end
                     self.inspectorTooltip:AddLine("  - " ..
                         fontStringName .. ": |cffffffff" .. fontName .. "|r")
                 end
