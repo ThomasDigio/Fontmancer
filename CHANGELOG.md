@@ -1,8 +1,1 @@
-- Updated for latest Retail (12.1.5), Mists of Pandaria Classic (5.5.4), Forever (1.60.1), and Classic Era (1.15.9) patches
-- Added a "None (Default)" option to the font dropdown so text size and outlines can be customized without overriding default fonts
-- Fixed Classic Era and Mists of Pandaria Classic crash caused by calling Retail-only `canaccessvalue` API (#41)
-- Fixed secret value errors in Midnight and Forever when hooks receive or read secret colour, alpha, font, or offset values
-- Fixed mangled/overlapping scrolling combat text on self (`Blizzard_CombatText`) (#29)
-- Restored case-insensitive matching for the excluded frame names list
-- Fixed "SetFont is disallowed" and nil-parent errors on dropdown/context menus and unparented/forbidden FontStrings (#33, #34)
-- Fixed size, spacing, and shadow offsets being applied twice on FontStrings inheriting from already-modified FontObjects
+- Added support for Burning Crusade Classic (2.5.6) and Titan Reforged (3.80.2)
