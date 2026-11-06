@@ -17,7 +17,8 @@ function addonTable:HookCallbacks()
             -- Skip if SetFont is explicitly disallowed on this instance (e.g. Blizzard_Menu compositor fontStrings)
             if rawget(fontInstance, "SetFont") ~= nil then return end
 
-            -- Skip if the font instance is a font string from a modern dropdown menu radio button because it's forbidden to set their font
+            -- Skip if the font instance is a font string from a modern dropdown menu radio button because it's forbidden to set their font,
+            -- or from Blizzard_CombatText (which inherits from CombatTextFont and uses SetTextHeight scaling that SetFont corrupts)
             if fontInstance.GetParent then
                 local parent = fontInstance:GetParent()
                 if not self:CanAccessValue(parent) then return end
@@ -25,7 +26,7 @@ function addonTable:HookCallbacks()
                     if parent.IsForbidden and parent:IsForbidden() then
                         return
                     end
-                    if parent.IsObjectType and parent:IsObjectType("Button") then
+                    if (parent.IsObjectType and parent:IsObjectType("Button")) or (CombatText and parent == CombatText) then
                         return
                     end
                 end
@@ -44,6 +45,14 @@ function addonTable:HookCallbacks()
 
             local exclusionState = self:GetExclusionState(fontName)
             if exclusionState == "FULL" then return end
+
+            -- Ignore non-SetFont calls (e.g. Pool_HideAndSetToDefaults calling SetAlpha) on FontStrings that have no font yet
+            if method ~= "SetFont" and not self.originalValues[fontName] then
+                local fontFile = fontInstance:GetFont()
+                if not self:CanAccessValue(fontFile) or not fontFile then
+                    return
+                end
+            end
 
             self:StoreOriginals(fontName, fontInstance)
             handler(fontName, fontInstance, ...)
