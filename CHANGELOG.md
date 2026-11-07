@@ -1,1 +1,2 @@
+- Fixed options panel failing to initialize and fonts not being applied on login (#42)
 - Added support for Burning Crusade Classic (2.5.6) and Titan Reforged (3.80.2)

@@ -2,50 +2,50 @@ local addonName, addonTable = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 
 function addonTable:CreateFadeTooltip()
-    local fadeTooltip = CreateFrame("Frame", "FontmancerFadeTooltip", UIParent, "BackdropTemplate")
-    fadeTooltip:SetFrameStrata("TOOLTIP")
-    fadeTooltip:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    local tooltip = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    tooltip:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true,
-        tileSize = 16,
         edgeSize = 16,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    fadeTooltip:SetBackdropColor(0, 0, 0, 0.9)
-    fadeTooltip:SetAlpha(0)
-    fadeTooltip:Hide()
+    tooltip:SetBackdropColor(0.08, 0.08, 0.1, 0.9)
+    tooltip:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+    tooltip:SetFrameStrata("TOOLTIP")
+    tooltip:Hide()
 
-    fadeTooltip.text = fadeTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    fadeTooltip.text:SetPoint("CENTER", 0, 0)
+    tooltip.text = tooltip:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    tooltip.text:SetPoint("TOPLEFT", 10, -10)
+    tooltip.text:SetPoint("BOTTOMRIGHT", -10, 10)
+    tooltip.text:SetJustifyH("CENTER")
 
-    function fadeTooltip:ShowMessage(owner, text)
-        self:ClearAllPoints()
-        self:SetPoint("BOTTOMLEFT", owner, "TOPRIGHT", 0, 0)
+    function tooltip:ShowMessage(owner, text)
+        self:SetPoint("BOTTOM", owner, "TOP", 0, 5)
         self.text:SetText(text)
-        self:SetSize(self.text:GetStringWidth() + 20, self.text:GetStringHeight() + 20)
-        UIFrameFadeIn(self, 0.2, self:GetAlpha(), 1)
+        self:SetWidth(math.min(GetScreenWidth() * 0.5, self.text:GetStringWidth() + 20)) -- Dynamic width based on text, capped at half screen width
+        self:SetHeight(self.text:GetStringHeight() + 20)
+
+        UIFrameFadeIn(self, 0.2, 0, 1)
     end
 
-    function fadeTooltip:HideMessage()
+    function tooltip:HideMessage()
         UIFrameFadeOut(self, 0.2, self:GetAlpha(), 0)
     end
 
-    return fadeTooltip
+    return tooltip
 end
 
 function addonTable:CreatePanelHeader(panel, fadeTooltip)
     local logo = panel:CreateTexture(nil, "ARTWORK")
+    logo:SetSize(25, 25)
+    logo:SetPoint("TOPLEFT", 15, -12)
     logo:SetTexture(self.metadata.LOGO_PATH)
-    logo:SetSize(64, 64)
-    logo:SetPoint("TOPLEFT", 20, -10)
-    local nameText = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    nameText:SetPoint("LEFT", logo, "RIGHT", 10, 0)
-    nameText:SetText(self.metadata.TITLE)
-    nameText:SetFont(nameText:GetFont(), 24)
-    local descText = panel:CreateFontString(nil, "ARTWORK", "GameFontSubHeader")
-    descText:SetPoint("LEFT", nameText, "RIGHT", 10, -2)
-    descText:SetText(self.metadata.DESCRIPTION)
+    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("LEFT", logo, "RIGHT", 10, -2)
+    title:SetText(self.metadata.TITLE)
+    local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    description:SetPoint("LEFT", title, "RIGHT", 20, 0)
+    description:SetText(self.metadata.DESCRIPTION)
 
     local infoButton = CreateFrame("Button", nil, panel)
     infoButton:SetSize(30, 30)
@@ -105,39 +105,35 @@ function addonTable:CreateCheckbox(label, key, parent, onEnter, onLeave)
     return button
 end
 
-function addonTable:CreateTristateCheckbox(label, key, parent, fadeTooltip)
+function addonTable:CreateTriStateCheckbox(label, key, parent, fadeTooltip, descriptionText)
     local button = self:CreateCheckbox(label, nil, parent, function(self)
         local state = addonTable.db.flags[key]
-        local statusText, color
-
-        if state == true then
-            statusText = "Forced ON"
-            color = "|cff00ff00" -- Green
-        elseif state == nil then
-            statusText = "Forced OFF"
-            color = "|cffff0000" -- Red
+        local subText = ""
+        if state == false then
+            subText = "|cff808080(Currently left as default)|r"
+        elseif state == true then
+            subText = "|cff00ff00(Currently applied everywhere)|r"
         else
-            statusText = "Default (let the UI decide)"
-            color = "|cffffd100" -- Gold
+            subText = "|cffff0000(Currently removed everywhere)|r"
         end
 
-        fadeTooltip:ShowMessage(self, string.format("%s: %s%s|r", label, color, statusText))
-    end, function() fadeTooltip:HideMessage() end)
+        fadeTooltip:ShowMessage(self, descriptionText .. "\n" .. subText)
+    end, function()
+        fadeTooltip:HideMessage()
+    end)
+    button.text:SetFontObject("GameFontNormalLarge") -- Makes the text a bit larger
 
     local function UpdateVisuals()
         local state = addonTable.db.flags[key]
-        local checkedTex = button:GetCheckedTexture()
-
-        if state == true then
-            button:SetChecked(true)
-            checkedTex:SetAtlas("common-icon-checkmark-yellow")
-            checkedTex:SetVertexColor(1, 1, 1)
-        elseif state == nil then
-            button:SetChecked(true)
-            checkedTex:SetAtlas("common-icon-redx")
-            checkedTex:SetVertexColor(1, 1, 1)
-        else
+        local texture = button:GetCheckedTexture()
+        if state == false then
             button:SetChecked(false)
+        elseif state == true then
+            button:SetChecked(true)
+            texture:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+        else
+            button:SetChecked(true)
+            texture:SetTexture("Interface\\RaidFrame\\ReadyCheck-NotReady")
         end
     end
 
