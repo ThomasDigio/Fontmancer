@@ -45,6 +45,7 @@ end
 
 -- Helper to check exclusion state
 -- Returns: "FULL", "PARTIAL", or nil
+-- TODO: Short-circuit when self.db.exclusionList is empty (next(self.db.exclusionList) == nil) before calling name:lower(), and use plain substring matching (string.find(..., 1, true))
 function addonTable:GetExclusionState(name)
     if not self:CanAccessValue(name) or not name then return nil end
     local lowerName = name:lower()
@@ -61,7 +62,7 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
     -- Change the following constants ASAP, otherwise it will not apply
-    -- TODO Applying once on first load event does not work, figure out how to optimise
+    -- TODO: Applying once on first ADDON_LOADED does not work because SharedMedia_MyMedia registers custom fonts after Fontmancer loads; optimise by unregistering ADDON_LOADED on PLAYER_LOGIN and/or listening to LibSharedMedia_Registered
     if FontmancerDB and FontmancerDB.global and FontmancerDB.global.selectedFont then
         local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, FontmancerDB.global.selectedFont)
         DAMAGE_TEXT_FONT = fetchedFont
@@ -284,6 +285,7 @@ function addonTable:ApplyFont(name, fontInstance)
     if not newHeight or newHeight <= 0 then return end
 
     -- Flags
+    -- TODO: Avoid allocating temporary tables (activeFlags, flag list, newFlagsSplit) and sorting on every ApplyFont call
     local newFlags
     if state == "PARTIAL" or disabled.flags then
         -- In PARTIAL mode, we preserve the original flags
@@ -375,6 +377,7 @@ function addonTable:ApplySpacing(name, fontInstance)
     self.isUpdating = false
 end
 
+-- TODO: Deduplicate ApplyTextColour and ApplyShadowColour with a shared helper, and avoid calling ApplyFont when only alpha changed (SetAlpha) or when colour overrides are disabled
 function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
     local state = self:GetExclusionState(name)
     if state == "FULL" or state == "PARTIAL" then return end

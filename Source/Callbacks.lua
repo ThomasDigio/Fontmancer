@@ -101,6 +101,7 @@ function addonTable:HookCallbacks()
         self:ApplyTextColour(name, fontInstance)
     end)
 
+    -- TODO: Avoid triggering ApplyFont from SetAlpha (alpha does not affect dark-text outline luminance and fires 60x/sec during fades)
     HookCallback("SetAlpha", function(name, fontInstance, alpha)
         if self:CanAccessValue(alpha) and alpha then
             self.originalValues[name].colours.text.a = alpha
