@@ -45,12 +45,12 @@ end
 
 -- Helper to check exclusion state
 -- Returns: "FULL", "PARTIAL", or nil
--- TODO: Short-circuit when self.db.exclusionList is empty (next(self.db.exclusionList) == nil) before calling name:lower(), and use plain substring matching (string.find(..., 1, true))
 function addonTable:GetExclusionState(name)
+    if next(self.db.exclusionList) == nil then return nil end
     if not self:CanAccessValue(name) or not name then return nil end
     local lowerName = name:lower()
     for keyword, state in pairs(self.db.exclusionList) do
-        if keyword ~= "" and string.find(lowerName, keyword:lower()) then
+        if keyword ~= "" and string.find(lowerName, keyword:lower(), 1, true) then
             return state
         end
     end
