@@ -57,21 +57,25 @@ function addonTable:GetExclusionState(name)
     return nil
 end
 
+local function ApplyGlobalFonts()
+    if addonTable.db and addonTable.db.selectedFont then
+        local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, addonTable.db.selectedFont, true)
+        if fetchedFont then
+            DAMAGE_TEXT_FONT = fetchedFont
+            UNIT_NAME_FONT = fetchedFont
+            STANDARD_TEXT_FONT = fetchedFont
+            NAMEPLATE_FONT = fetchedFont
+        end
+    end
+end
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(self, event, arg1)
-    -- Change the following constants ASAP, otherwise it will not apply
-    -- TODO: Applying once on first ADDON_LOADED does not work because SharedMedia_MyMedia registers custom fonts after Fontmancer loads; optimise by unregistering ADDON_LOADED on PLAYER_LOGIN and/or listening to LibSharedMedia_Registered
-    if FontmancerDB and FontmancerDB.global and FontmancerDB.global.selectedFont then
-        local fetchedFont = LSM:Fetch(LSM.MediaType.FONT, FontmancerDB.global.selectedFont)
-        DAMAGE_TEXT_FONT = fetchedFont
-        UNIT_NAME_FONT = fetchedFont
-        STANDARD_TEXT_FONT = fetchedFont
-        NAMEPLATE_FONT = fetchedFont
-    end
-
     if event == "ADDON_LOADED" and arg1 == addonName then
+        self:UnregisterEvent("ADDON_LOADED")
+
         -- Initialise from defaults if missing
         FontmancerDB = FontmancerDB or {}
         FontmancerDB.global = FontmancerDB.global or {}
@@ -106,12 +110,23 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1)
             addonTable.db.flags = { MONOCHROME = false, OUTLINE = false, THICKOUTLINE = false }
         end
 
+        -- Change the global font constants ASAP, and re-apply if a custom font is registered later (e.g. via SharedMedia_MyMedia)
+        ApplyGlobalFonts()
+        LSM.RegisterCallback(addonTable, "LibSharedMedia_Registered", function(_, mediaType, key)
+            if mediaType == LSM.MediaType.FONT and key == addonTable.db.selectedFont then
+                ApplyGlobalFonts()
+                addonTable:UpdateAllStoredInstances()
+            end
+        end)
+
         -- Populate addon properties needed for options
         for key, value in pairs(addonTable.metadata) do
             addonTable.metadata[key] = C_AddOns.GetAddOnMetadata(addonName, value)
         end
         addonTable.initiallySelectedFont = addonTable.db.selectedFont
     elseif event == "PLAYER_LOGIN" then
+        self:UnregisterEvent("PLAYER_LOGIN")
+
         local fadeTooltip = addonTable:CreateFadeTooltip()
         addonTable:CreateOptionsPanel(fadeTooltip)
         -- addonTable:CreateAdvancedOptionsPanel(fadeTooltip)

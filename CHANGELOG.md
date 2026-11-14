@@ -1,1 +1,1 @@
-- Improved exclusion list performance and fixed matching for frame names containing special characters
+- Optimised startup event handling (listening to LibSharedMedia registration callbacks instead of every ADDON_LOADED event)
