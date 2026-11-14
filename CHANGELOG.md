@@ -1,1 +1,1 @@
-- Optimised startup event handling (listening to LibSharedMedia registration callbacks instead of every ADDON_LOADED event)
+- Bunch of behind-the-scenes optimisation

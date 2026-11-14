@@ -168,9 +168,9 @@ function addonTable:UpdateInstance(name, revertingFunction)
         revertingFunction(self, name, fontInstance, true)
     else
         self:StoreOriginals(name, fontInstance)
+        self:ApplyTextColour(name, fontInstance, false, true)
         self:ApplyFont(name, fontInstance)
         self:ApplySpacing(name, fontInstance)
-        self:ApplyTextColour(name, fontInstance)
         self:ApplyShadowColour(name, fontInstance)
         self:ApplyShadowOffset(name, fontInstance)
     end
@@ -260,6 +260,23 @@ function addonTable:StoreOriginals(name, fontInstance)
     return true
 end
 
+local function ParseFlags(flagsStr)
+    if not flagsStr or flagsStr == "" then
+        return false, false, false
+    end
+    local upper = flagsStr:upper()
+    local hasMono = string.find(upper, "MONOCHROME", 1, true) ~= nil
+    local hasThick = string.find(upper, "THICKOUTLINE", 1, true) ~= nil
+    local hasOutline = false
+    if upper == "OUTLINE"
+        or string.find(upper, "^OUTLINE%s*,") ~= nil
+        or string.find(upper, ",%s*OUTLINE%s*,") ~= nil
+        or string.find(upper, ",%s*OUTLINE$") ~= nil then
+        hasOutline = true
+    end
+    return hasMono, hasOutline, hasThick
+end
+
 function addonTable:ApplyFont(name, fontInstance)
     local state = self:GetExclusionState(name)
     if state == "FULL" then return end
@@ -300,7 +317,6 @@ function addonTable:ApplyFont(name, fontInstance)
     if not newHeight or newHeight <= 0 then return end
 
     -- Flags
-    -- TODO: Avoid allocating temporary tables (activeFlags, flag list, newFlagsSplit) and sorting on every ApplyFont call
     local newFlags
     if state == "PARTIAL" or disabled.flags then
         -- In PARTIAL mode, we preserve the original flags
@@ -308,45 +324,36 @@ function addonTable:ApplyFont(name, fontInstance)
     elseif specific and specific.flags then
         newFlags = specific.flags
     else
-        local activeFlags = {}
-        local originalFlags = self.originalValues[name].flags or ""
+        local hasMono, hasOutline, hasThick = ParseFlags(self.originalValues[name].flags)
+        local dbFlags = self.db.flags
 
-        -- Parse original flags into a set
-        for flag in string.gmatch(originalFlags, "[^,]+") do
-            flag = flag:match("^%s*(.-)%s*$") -- Trim whitespace
-            if flag and flag ~= "" then
-                activeFlags[flag:upper()] = true
+        if dbFlags.MONOCHROME ~= false then hasMono = dbFlags.MONOCHROME == true end
+        if dbFlags.OUTLINE ~= false then hasOutline = dbFlags.OUTLINE == true end
+        if dbFlags.THICKOUTLINE ~= false then hasThick = dbFlags.THICKOUTLINE == true end
+
+        -- Outlines exclusions for dark text (only check GetTextColor when an outline is actually active)
+        if hasOutline or hasThick then
+            local r, g, b = fontInstance:GetTextColor()
+            if self:CanAccessAllValues(r, g, b) and r and g and b then
+                local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
+                if luminance < 0.2 then
+                    hasOutline = false
+                    hasThick = false
+                end
             end
         end
 
-        -- Apply overrides using a KNOWN list of flags
-        for _, flagName in ipairs({ "MONOCHROME", "OUTLINE", "THICKOUTLINE" }) do
-            local flagState = self.db.flags[flagName]
-
-            if flagState == true then
-                activeFlags[flagName] = true
-            elseif flagState == nil then
-                activeFlags[flagName] = nil
+        if hasMono then
+            if hasOutline then
+                newFlags = hasThick and "MONOCHROME, OUTLINE, THICKOUTLINE" or "MONOCHROME, OUTLINE"
+            else
+                newFlags = hasThick and "MONOCHROME, THICKOUTLINE" or "MONOCHROME"
             end
+        elseif hasOutline then
+            newFlags = hasThick and "OUTLINE, THICKOUTLINE" or "OUTLINE"
+        else
+            newFlags = hasThick and "THICKOUTLINE" or ""
         end
-
-        -- Outlines exclusions
-        local r, g, b = fontInstance:GetTextColor()
-        if self:CanAccessAllValues(r, g, b) and r and g and b then
-            local luminance = (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
-            if luminance < 0.2 then
-                activeFlags["OUTLINE"] = nil
-                activeFlags["THICKOUTLINE"] = nil
-            end
-        end
-
-        -- Rebuild the comma-separated string
-        local newFlagsSplit = {}
-        for flag in pairs(activeFlags) do
-            table.insert(newFlagsSplit, flag)
-        end
-        table.sort(newFlagsSplit)
-        newFlags = table.concat(newFlagsSplit, ", ")
     end
 
     -- TODO: figure out why that works in letting objective text scale immediately
@@ -392,62 +399,59 @@ function addonTable:ApplySpacing(name, fontInstance)
     self.isUpdating = false
 end
 
--- TODO: Deduplicate ApplyTextColour and ApplyShadowColour with a shared helper, and avoid calling ApplyFont when only alpha changed (SetAlpha) or when colour overrides are disabled
-function addonTable:ApplyTextColour(name, fontInstance, shouldRevert)
-    local state = self:GetExclusionState(name)
-    if state == "FULL" or state == "PARTIAL" then return end
-
-    local colourSettings = self.db.colours.text
+local function ApplyColour(self, name, fontInstance, colourKey, setterMethod, shouldRevert)
+    local colourSettings = self.db.colours[colourKey]
     local specific = self.db.specific[name]
-    local disabled = specific and specific.disabled or {}
+    local disabled = specific and specific.disabled
+    local hasSpecific = specific and specific[colourKey]
+    local isDisabled = disabled and disabled[colourKey]
 
+    if not shouldRevert and not isDisabled and not hasSpecific and not colourSettings.isEnabled then
+        return
+    end
+
+    local originalColour = self.originalValues[name].colours[colourKey]
     self.isUpdating = true
-    if shouldRevert or disabled.text then
-        local originalColour = self.originalValues[name].colours.text
-        pcall(fontInstance.SetTextColor, fontInstance, originalColour.r, originalColour.g, originalColour.b, originalColour.a)
-    elseif specific and specific.text then
-        local s = specific.text
-        pcall(fontInstance.SetTextColor, fontInstance, s.r, s.g, s.b, s.a)
+    if shouldRevert or isDisabled then
+        pcall(setterMethod, fontInstance, originalColour.r, originalColour.g, originalColour.b, originalColour.a)
+    elseif hasSpecific then
+        pcall(setterMethod, fontInstance, hasSpecific.r, hasSpecific.g, hasSpecific.b, hasSpecific.a)
     elseif colourSettings.isEnabled then
-        if self:CanAccessValue(self.originalValues[name].colours.text.a) then
-            local originalAlpha = self.originalValues[name].colours.text.a or 1
+        if self:CanAccessValue(originalColour.a) then
+            local originalAlpha = originalColour.a or 1
             local finalAlpha = math.min(colourSettings.a, originalAlpha)
-            pcall(fontInstance.SetTextColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
+            pcall(setterMethod, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
         else
-            pcall(fontInstance.SetTextColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
+            pcall(setterMethod, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
         end
     end
     self.isUpdating = false
+end
 
-    -- This ensures that if a FontString becomes dark, the outline is removed
-    self:ApplyFont(name, fontInstance)
+function addonTable:ApplyTextColour(name, fontInstance, shouldRevert, skipFontUpdate)
+    local state = self:GetExclusionState(name)
+    if state == "FULL" or state == "PARTIAL" then return end
+
+    ApplyColour(self, name, fontInstance, "text", fontInstance.SetTextColor, shouldRevert)
+
+    -- Re-evaluate dark-text outline exclusion only when RGB changed and an outline could be active
+    if not skipFontUpdate then
+        local origFlags = self.originalValues[name].flags
+        local specific = self.db.specific[name]
+        local specFlags = specific and specific.flags
+        if self.db.flags.OUTLINE or self.db.flags.THICKOUTLINE
+            or (origFlags and origFlags ~= "" and string.find(origFlags, "OUTLINE", 1, true))
+            or (specFlags and specFlags ~= "" and string.find(specFlags, "OUTLINE", 1, true)) then
+            self:ApplyFont(name, fontInstance)
+        end
+    end
 end
 
 function addonTable:ApplyShadowColour(name, fontInstance, shouldRevert)
     local state = self:GetExclusionState(name)
     if state == "FULL" or state == "PARTIAL" then return end
 
-    local colourSettings = self.db.colours.shadow
-    local specific = self.db.specific[name]
-    local disabled = specific and specific.disabled or {}
-
-    self.isUpdating = true
-    if shouldRevert or disabled.shadow then
-        local originalColour = self.originalValues[name].colours.shadow
-        pcall(fontInstance.SetShadowColor, fontInstance, originalColour.r, originalColour.g, originalColour.b, originalColour.a)
-    elseif specific and specific.shadow then
-        local s = specific.shadow
-        pcall(fontInstance.SetShadowColor, fontInstance, s.r, s.g, s.b, s.a)
-    elseif colourSettings.isEnabled then
-        if self:CanAccessValue(self.originalValues[name].colours.shadow.a) then
-            local originalAlpha = self.originalValues[name].colours.shadow.a or 1
-            local finalAlpha = math.min(colourSettings.a, originalAlpha)
-            pcall(fontInstance.SetShadowColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, finalAlpha)
-        else
-            pcall(fontInstance.SetShadowColor, fontInstance, colourSettings.r, colourSettings.g, colourSettings.b, colourSettings.a)
-        end
-    end
-    self.isUpdating = false
+    ApplyColour(self, name, fontInstance, "shadow", fontInstance.SetShadowColor, shouldRevert)
 end
 
 function addonTable:ApplyShadowOffset(name, fontInstance)

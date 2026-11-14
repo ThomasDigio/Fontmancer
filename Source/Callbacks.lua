@@ -91,39 +91,41 @@ function addonTable:HookCallbacks()
 
     HookCallback("SetTextColor", function(name, fontInstance, r, g, b, a)
         if self:CanAccessAllValues(r, g, b, a) and r and g and b then
-            self.originalValues[name].colours.text = {
-                r = r,
-                g = g,
-                b = b,
-                a = a or self.originalValues[name].colours.text.a or 1
-            }
+            local textColour = self.originalValues[name].colours.text
+            textColour.r = r
+            textColour.g = g
+            textColour.b = b
+            textColour.a = a or textColour.a or 1
         end
         self:ApplyTextColour(name, fontInstance)
     end)
 
-    -- TODO: Avoid triggering ApplyFont from SetAlpha (alpha does not affect dark-text outline luminance and fires 60x/sec during fades)
     HookCallback("SetAlpha", function(name, fontInstance, alpha)
         if self:CanAccessValue(alpha) and alpha then
             self.originalValues[name].colours.text.a = alpha
-            self:ApplyTextColour(name, fontInstance)
+            local specific = self.db.specific[name]
+            if self.db.colours.text.isEnabled or (specific and (specific.text or (specific.disabled and specific.disabled.text))) then
+                self:ApplyTextColour(name, fontInstance, false, true)
+            end
         end
     end)
 
     HookCallback("SetShadowColor", function(name, fontInstance, r, g, b, a)
         if self:CanAccessAllValues(r, g, b, a) and r and g and b then
-            self.originalValues[name].colours.shadow = {
-                r = r,
-                g = g,
-                b = b,
-                a = a or self.originalValues[name].colours.shadow.a or 1
-            }
+            local shadowColour = self.originalValues[name].colours.shadow
+            shadowColour.r = r
+            shadowColour.g = g
+            shadowColour.b = b
+            shadowColour.a = a or shadowColour.a or 1
         end
         self:ApplyShadowColour(name, fontInstance)
     end)
 
     HookCallback("SetShadowOffset", function(name, fontInstance, x, y)
         if self:CanAccessAllValues(x, y) and x and y then
-            self.originalValues[name].offsets.shadow = { x = x, y = y }
+            local shadowOffset = self.originalValues[name].offsets.shadow
+            shadowOffset.x = x
+            shadowOffset.y = y
         end
         self:ApplyShadowOffset(name, fontInstance)
     end)
