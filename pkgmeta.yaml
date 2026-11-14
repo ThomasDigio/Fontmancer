@@ -1,8 +1,15 @@
 externals:
   Libraries/CallbackHandler: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0
-  Libraries/LibSharedMedia: https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
+  Libraries/LibSharedMedia: https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3-0
   Libraries/LibStub: https://repos.curseforge.com/wow/libstub/trunk
 
 manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown
+
+ignore:
+  - Assets/Before_After.jpg
+  - Assets/HiddenExtensionsSetting.png
+  - install_deps.py
+  - README.md
+  - Source/Class.lua
