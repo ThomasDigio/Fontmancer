@@ -129,7 +129,8 @@ function addonTable:CreateAdvancedOptionsPanel(fadeTooltip)
         local keys = {}
         for k in pairs(self.originalValues) do
             -- Filter out dynamic instances without names because there's no point storing overrides for them
-            if (search == "" or k:lower():find(search)) and not k:lower():find("^table:") then
+            local lowerK = k:lower()
+            if (search == "" or lowerK:find(search, 1, true)) and not lowerK:find("^table:") then
                 table.insert(keys, k)
             end
         end

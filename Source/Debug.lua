@@ -98,7 +98,7 @@ debugFrame:SetScript("OnEvent", function(_, event)
         C_Timer.After(1, function()
             SnapshotDebugState()
             addonTable:DebugLog(
-            "Debug mode active. Use /fmdebug [status|reset|inspect <name>] and /reload to flush to SavedVariables.")
+                "Debug mode active. Use /fmdebug [status|reset|inspect <name>] and /reload to flush to SavedVariables.")
         end)
     elseif event == "PLAYER_LOGOUT" then
         SnapshotDebugState()
@@ -148,7 +148,7 @@ SlashCmdList["FONTMANCERDEBUG"] = function(msg)
         end
         SnapshotDebugState()
         addonTable:DebugLog(string.format(
-        "Inspected %d matching instances for '%s' (saved to FontmancerDB.debug.inspected).", matches, arg))
+            "Inspected %d matching instances for '%s' (saved to FontmancerDB.debug.inspected).", matches, arg))
     else
         SnapshotDebugState()
         local d = FontmancerDB and FontmancerDB.debug

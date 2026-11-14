@@ -20,7 +20,7 @@
 ---@field ApplyShadowOffset fun(self: Fontmancer, name: string, fontInstance: FontInstance): nil
 ---@field ApplySpacing fun(self: Fontmancer, name: string, fontInstance: FontInstance): nil
 ---@field StoreOriginals fun(self: Fontmancer, name: string, fontInstance: FontInstance): boolean
----@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, shouldRevert?: boolean): nil
+---@field ApplyTextColour fun(self: Fontmancer, name: string, fontInstance: FontInstance, shouldRevert?: boolean, skipFontUpdate?: boolean): nil
 ---@field UpdateAllStoredInstances fun(self: Fontmancer, revertingFunction?: function): nil
 ---@field UpdateInstance fun(self: Fontmancer, name: string, revertingFunction?: function): nil
 -- Defined in Options.lua

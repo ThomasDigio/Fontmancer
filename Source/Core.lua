@@ -356,7 +356,10 @@ function addonTable:ApplyFont(name, fontInstance)
         end
     end
 
-    -- TODO: figure out why that works in letting objective text scale immediately
+    -- Skip calling SetFont if the instance already has the target font, height, and flags.
+    -- Calling SetFont directly on a child FontString overrides its dynamic FontObject inheritance
+    -- (for example, preventing Blizzard_ObjectiveTracker line text from scaling immediately when
+    -- ObjectiveTrackerLineFont's height is updated).
     local currentFile, currentHeight, currentFlags = fontInstance:GetFont()
     if self:CanAccessAllValues(currentFile, currentFlags) then
         -- Handle flag normalization (Game might return nil for empty string)
